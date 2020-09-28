@@ -76,11 +76,11 @@ class RNN:
       # Next dL/dh = dL/dh * (1 - h^2) * Whh
       d_h = self.Whh * temp
 
-    # Clip to prevent exploding gradients.
+    # Обрезаем для предотвращения резких скачков градиентов
     for d in [d_Wxh, d_Whh, d_Why, d_bh, d_by]:
       np.clip(d, -1, 1, out=d)
 
-    # Update weights and biases using gradient descent.
+    # Обновляем веса и смещения, используя градиентный спуск
     self.Whh -= learn_rate * d_Whh
     self.Wxh -= learn_rate * d_Wxh
     self.Why -= learn_rate * d_Why

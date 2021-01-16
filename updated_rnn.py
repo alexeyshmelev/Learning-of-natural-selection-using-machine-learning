@@ -1,12 +1,15 @@
 import sys
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.utils.data as data_utils
 from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 import settings
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(sys.path)
+print(device)
 
 num_classes = settings.num_classes
 input_size = settings.input_size
@@ -61,25 +64,26 @@ class Model(nn.Module):
 
 # Initialize model, set loss and optimizer function, CrossEntropyLoss = LogSoftmax + NLLLoss
 model = Model(num_layers, hidden_size)
+model.to(device)
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
 print(model)
 
 data = FormData(train_number, num_classes)
-print(data)
 dataset = DataLoader(data, batch_size=settings.data_loader_batch_size, shuffle=True, num_workers=2)
 
 if settings.boot_from_file:
 
   model = Model(num_layers, hidden_size) #определяем класс с помощью уже натренированной сети
+  model.to(device)
   model.load_state_dict(torch.load('sample_data/rnn.pth'))
   model.eval()
 
 else:
 
   for i, batch in enumerate(dataset): #тренируем сеть
-    labels = batch[-1::].type(dtype=torch.long)
-    inputs = batch[:-1:].clone().detach().requires_grad_(True).float().view((1, num_classes))
+    labels = batch[-1::].type(dtype=torch.long).to(device)
+    inputs = batch[:-1:].clone().detach().requires_grad_(True).float().view((1, num_classes)).to(device)
     for epoch in range(100):
       outputs = model(inputs)
       optimizer.zero_grad()
@@ -92,8 +96,11 @@ else:
 torch.save(model.state_dict(), 'sample_data/rnn.pth')
 
 print("Learning finished!")
+
 m = nn.Softmax(dim=1)
-test_data = torch.FloatTensor([0.9315, 0.966, 0.934, 0.9775, 0.9385, 0.951, 0.924, 0.9535, 0.932, 0.8845, 0.9295])
-#test_data = torch.FloatTensor([0.9595, 0.909, 0.8625, 0.895, 0.8445, 0.9405, 0.9345, 0.8915, 0.9375, 0.886])
+test_data = torch.FloatTensor([0.9315, 0.966, 0.934, 0.9775, 0.9385, 0.951, 0.924, 0.9535, 0.932, 0.8845, 0.9295]).to(device)
 test_outputs = model(test_data)
-print(m(test_outputs))
+test_outputs = m(test_outputs).cpu().detach().numpy().flatten()
+print(test_outputs)
+max = np.argmax(test_outputs)
+print('Natural selection was in locus {:.2} with the probability of {}'.format(max/10, test_outputs[max]))

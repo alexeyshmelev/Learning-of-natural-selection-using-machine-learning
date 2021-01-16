@@ -70,7 +70,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
 print(model)
 
 data = FormData(train_number, num_classes)
-dataset = DataLoader(data, batch_size=settings.data_loader_batch_size, shuffle=True, num_workers=2)
 
 if settings.boot_from_file:
 
@@ -81,26 +80,26 @@ if settings.boot_from_file:
 
 else:
 
-  for i, batch in enumerate(dataset): #тренируем сеть
-    labels = batch[-1::].type(dtype=torch.long).to(device)
-    inputs = batch[:-1:].clone().detach().requires_grad_(True).float().view((1, num_classes)).to(device)
-    for epoch in range(100):
-      outputs = model(inputs)
-      optimizer.zero_grad()
-      loss = criterion(outputs, labels)
-      loss.backward()
-      optimizer.step()
-   
-      print("epoch: %d, loss: %1.6f" % (epoch + 1, loss.item()))
+  for epoch in range(20):
+    dataset = DataLoader(data, batch_size=settings.data_loader_batch_size, shuffle=True, num_workers=2)
+    for i, batch in enumerate(dataset): #тренируем сеть
+      labels = batch[-1::].type(dtype=torch.long).to(device)
+      inputs = batch[:-1:].clone().detach().requires_grad_(True).float().view((1, num_classes)).to(device)
+      for times in range(6):
+        outputs = model(inputs)
+        optimizer.zero_grad()
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        print('Epoch: {}, Time: {}, loss: {:.6}'.format(epoch, times + 1, loss.item()))
+
+  print("Learning finished!")
 
 torch.save(model.state_dict(), 'sample_data/rnn.pth')
-
-print("Learning finished!")
 
 m = nn.Softmax(dim=1)
 test_data = torch.FloatTensor([0.9315, 0.966, 0.934, 0.9775, 0.9385, 0.951, 0.924, 0.9535, 0.932, 0.8845, 0.9295]).to(device)
 test_outputs = model(test_data)
 test_outputs = m(test_outputs).cpu().detach().numpy().flatten()
-print(test_outputs)
 max = np.argmax(test_outputs)
 print('Natural selection was in locus {:.2} with the probability of {}'.format(max/10, test_outputs[max]))

@@ -98,7 +98,14 @@ else:
 torch.save(model.state_dict(), 'sample_data/rnn.pth')
 
 m = nn.Softmax(dim=1)
-test_data = torch.FloatTensor([0.9315, 0.966, 0.934, 0.9775, 0.9385, 0.951, 0.924, 0.9535, 0.932, 0.8845, 0.9295]).to(device)
+test_data = []
+file_line = 'sample_data/test_data_locus0.9.txt'
+file = open(file_line, 'r')
+for line in file:
+  array = line.split('\t')
+  test_data += [float(array[2])]
+file.close()
+test_data = torch.tensor(test_data).to(device)
 test_outputs = model(test_data)
 test_outputs = m(test_outputs).cpu().detach().numpy().flatten()
 max = np.argmax(test_outputs)

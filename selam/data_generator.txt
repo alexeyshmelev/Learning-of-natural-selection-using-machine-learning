@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# $1 --- this is interval
+# $2 --- this is amout of simulated files per number in interval
+
+echo "Generation started"
+mkdir simulation
+number=$(echo "scale=0; 1/$1" | bc -l)
+dim=$(echo "scale=0;k=$1;s=0;while(k<1) {k=k*10;s=s+1}; s" | bc -l)
+for ((i=0; i<$number; i++))
+do
+
+if [[ $i == 0 ]]
+then
+mkdir simulation/locus_0.0
+else
+mkdir simulation/locus_0$(echo "scale=$dim; $1*$i" | bc -l)
+fi
+
+echo "S	F	0	"$(echo "scale=$dim; $1*$i" | bc -l)"	1	1	0.9" > selection.txt
+for ((j=0; j<$2; j++))
+do
+SELAM -d demography.txt -o output.txt -s selection.txt -h --seed $((10*$i))
+
+if [[ $i == 0 ]]
+then
+SELAM_STATS -i population_output.txt -a $1 > simulation/locus_0.0/selection_in_0.0_var_$j.txt
+else
+SELAM_STATS -i population_output.txt -a $1 > simulation/locus_0$(echo "scale=$dim; $1*$i" | bc -l)/selection_in_0$(echo "scale=$dim; $1*$i" | bc -l)_var_$j.txt
+fi
+
+rm population_output.txt
+done
+done
+echo "Generation finished successfully"

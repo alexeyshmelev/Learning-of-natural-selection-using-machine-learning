@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 import numpy as np
@@ -30,11 +31,13 @@ def FormData(train_number, class_number):
   for i in range(train_number):
     for j in range(0, class_number):
       if j == 0:
-        file_line = '../selam/simulation/locus_0.0/selection_in_0.0_var_' + str(i) + '.txt'
+        path = '../selam/simulation/locus_0.0'
       else:
         locus_number = line_format % (j/num_classes)
-        file_line = '../selam/simulation/locus_' + locus_number + '/selection_in_' + locus_number + '_var_' + str(i) + '.txt'
-      file = open(file_line, 'r')
+        path = '../selam/simulation/locus_' + locus_number
+      file_list = sorted(os.listdir(path))
+      exact_file = path + '/' + file_list[i]
+      file = open(exact_file, 'r')
       for line in file:
         array = line.split('\t')
         data += [float(array[2])]
@@ -111,8 +114,8 @@ torch.save(model.state_dict(), 'rnn.pth')
 
 m = nn.Softmax(dim=1)
 test_data = []
-file_line = '../selam/test_data_locus_0.9.txt'
-file = open(file_line, 'r')
+path = '../selam/test_data_locus_0.9.txt'
+file = open(path, 'r')
 for line in file:
   array = line.split('\t')
   test_data += [float(array[2])]

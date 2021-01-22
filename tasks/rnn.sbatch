@@ -1,14 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=selam_rnn
-#SBATCH --error=rnn_errors.txt
-#SBATCH --output=rnn_results.txt
-#SBATCH --time=00:10:00
+#SBATCH --job-name=selam_generator
+#SBATCH --error=selam_errors.txt
+#SBATCH --output=selam_results.txt
+#SBATCH --time=01:20:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --gpus=1
-#SBATCH --deadline=00:06:00
+#SBATCH --deadline=01:20:00
+--constraint="type_d" 
 
-module load Python/Anaconda_v10.2019
+module load libs/gsl/2.6
+export PATH=$PATH:/home/avshmelev/SELAM-master/SELAM-master/src
 cd ..
-cd rnn
-srun python rnn.py
+cd selam
+srun ./data_generator.txt 0.01 1 0.1 0.2 0.02 10 55 0.01 0.1 0.01

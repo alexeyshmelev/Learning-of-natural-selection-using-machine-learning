@@ -19,3 +19,12 @@ Here are given three folders: *rnn*, *selam* and *tasks*. Let's define what each
 * tasks - mainly store .sbatch files which are used to run programs using SLURM
 
 ## Progress
+
+- [ ] Create bidirectional RNN in order to find part of genome which is under natural selection
+    - [X] Write working code itself
+    - [ ] Opimize it for better performance in training results
+- [ ] Create feedforward neural network using regression for finding generation where data was taken from
+    - [X] Write working code itself
+    - [ ]  Opimize it for better performance in training results
+    - [ ] Find optimal mathematical model
+- [X] Make program to work parallel

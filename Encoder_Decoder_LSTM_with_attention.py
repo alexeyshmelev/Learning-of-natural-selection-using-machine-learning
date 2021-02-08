@@ -10,15 +10,14 @@ class Encoder(nn.Module):
 
   def forward(self, input):
     output, hidden_state = self.lstm(input)
+    #print('DATA:', self.lstm.weight_hh_l0[0])
     return output
 
 class Decoder(nn.Module):
   def __init__(self):
     super(Decoder, self).__init__()
     self.lstm = nn.LSTM(10, 1, 1, batch_first=True)
-    self.linear = []
-    for i in range(10):
-      self.linear.append(nn.Linear(10, 10))
+    self.linear = nn.ModuleList([nn.Linear(10, 10) for i in range(10)])
     self.softmax = nn.Softmax(dim=0)
 
   def forward(self, input):
@@ -67,8 +66,9 @@ class RNN():
     
     loss.backward()
 
-    self.decoder_optimizer.step()
     self.encoder_optimizer.step()
+    self.decoder_optimizer.step()
+    
 
     return 0
 

@@ -33,7 +33,7 @@ class Attention(nn.Module):
     #sum = torch.sum(multiplication, 0).view(1, 6)
     #print(sum)
     output = self.hidden(multiplication)
-    output = self.sigmoid(self.out(output))
+    output = self.out(output)
     #print(output)
     return output
 

@@ -28,25 +28,26 @@ def SLS(): #####################################################################
     data = []
     temp_data = []
 
-    for i in range(train_number):
-      for j in range(0, class_number):
-        if j == 0:
-          path = '../selam/simulation/locus_0.0'
-        else:
-          locus_number = line_format % (j/num_classes)
-          path = '../selam/simulation/locus_' + locus_number
-        file_list = sorted(os.listdir(path))
-        exact_file = path + '/' + file_list[i]
-        file = open(exact_file, 'r')
-        for line in file:
-          array = line.split('\t')
-          temp_data += [float(array[2])]
-        temp_data.append(j)
-        data.append(temp_data)
-        temp_data = []
-        file.close()
+    if settings.boot_from_file:
+      for i in range(train_number):
+        for j in range(0, class_number):
+          if j == 0:
+            path = '../selam/simulation/locus_0.0'
+          else:
+            locus_number = line_format % (j/num_classes)
+            path = '../selam/simulation/locus_' + locus_number
+          file_list = sorted(os.listdir(path))
+          exact_file = path + '/' + file_list[i]
+          file = open(exact_file, 'r')
+          for line in file:
+            array = line.split('\t')
+            temp_data += [float(array[2])]
+          temp_data.append(j)
+          data.append(temp_data)
+          temp_data = []
+          file.close()
 
-    return data
+      return data
 
 
   class SampleDataset(TensorDataset):
@@ -88,7 +89,7 @@ def SLS(): #####################################################################
 
   if settings.boot_from_file:
 
-    model_sls = SLS(num_layers, hidden_size) #определяем класс с помощью уже натренированной сети
+    model_sls = SLS(input_size, hidden_size, num_layers, sequence_length, num_classes) #определяем класс с помощью уже натренированной сети
     model_sls.cuda(0)
     model_sls.load_state_dict(torch.load('rnn.pth'))
     model_sls.eval()
@@ -97,7 +98,7 @@ def SLS(): #####################################################################
 
     # Initialize model_sls, set loss and optimizer function, CrossEntropyLoss = LogSoftmax + NLLLoss
     model_sls = SLS(input_size, hidden_size, num_layers, sequence_length, num_classes)
-    model_sls.cuda(0)
+    model_sls.cuda(0) #переместили модель на графический процессор прежде, чем объявлять torch.optim для неё, это правильно
     criterion_sls = torch.nn.CrossEntropyLoss()
     optimizer_sls = torch.optim.Adam(model_sls.parameters(), lr=0.006)
     print(model_sls)
@@ -149,13 +150,14 @@ def SLS(): #####################################################################
   test_outputs = model_sls(test_data)
   test_outputs = m(test_outputs).cpu().detach().numpy().flatten()
   max = np.argmax(test_outputs)
-  print('Natural selection was in locus {:.2} with the probability of {}'.format(max/10, test_outputs[max]))
+  print('Natural selection was in locus {:.2} with the probability of {}'.format(max/100, test_outputs[max]))
 
 def GEN(): ######################################################################################################################################################################################################################
 
   def FormData(train_number, class_number):
 
     data = []
+    temp_data = []
 
     for i in range(train_number):
       for j in range(0, class_number):
@@ -169,9 +171,10 @@ def GEN(): #####################################################################
         file = open(exact_file, 'r')
         for line in file:
           array = line.split('\t')
-          data += [float(array[2])]
-        #print(int(exact_file.split('_')[7]), flush=True)
-        data.append(int(exact_file.split('_')[7]))
+          temp_data += [float(array[2]), float(array[3]), float(array[4]), float(array[5]), float(array[6])]
+        temp_data.append(float(exact_file.split('_')[5])*100)
+        data.append(temp_data)
+        temp_data = []
         file.close()
 
     return data
@@ -179,71 +182,71 @@ def GEN(): #####################################################################
 
   class SampleDataset(TensorDataset):
     def __init__(self, secuence):
-      self.samples=secuence
+      self.samples=torch.tensor(secuence)
   
     def __len__(self):
-        return len(self.samples)
+      return len(self.samples)
 
-    def __getitem__(self,idx):
-        return (self.samples[idx])
+    def __getitem__(self,index):
+      return (self.samples[index])
 
   class GEN(nn.Module):
 
-    def __init__(self, gen_num_classes, gen_hidden_size):
+    def __init__(self, gen_num_classes):
       super(GEN, self).__init__() 
-      self.gen_num_classes = gen_num_classes
-      self.gen_hidden_size = gen_hidden_size
-      self.rnn = nn.RNN(gen_num_classes, gen_hidden_size, batch_first=True, bidirectional=True)
-      self.linear = nn.Linear(2*gen_hidden_size, batch_size)
+      encoder_layers = nn.TransformerEncoderLayer(d_model=gen_num_classes*5, nhead=5, dim_feedforward=10000, dropout=0) # dim_feedforward=2048 --- for generation, 
+      self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=1)
+      self.decoder = nn.Linear(gen_num_classes*5, 1)
 
     def forward(self, x):
-      x = x.view(-1, sequence_length, input_size) # (batch_size, sequence_length, input_size)
-      out, _ = self.rnn(x)
-      out = self.linear(out.view(-1, 2*self.gen_hidden_size))
-      #print('GEN {}'.format(out))
-      return out
+      output = self.transformer_encoder(x)
+      output = self.decoder(output).view(1, 1)
+      return output
 
 
   data = FormData(train_number, num_classes)
 
   if settings.boot_from_file:
-    a = 1
-    #model_sls = SLS(num_layers, hidden_size) #определяем класс с помощью уже натренированной сети
-    #model_sls.to(device)
-    #model_sls.load_state_dict(torch.load('rnn.pth'))
-    #model_sls.eval()
+    model_gen = GEN(num_classes) #определяем класс с помощью уже натренированной сети
+    model_gen.cuda(0)
+    model_gen.load_state_dict(torch.load('transformer_add.pth'))
+    model_gen.eval()
 
   else:
 
     # Initialize model_gen, set loss and optimizer function, CrossEntropyLoss = LogSoftmax + NLLLoss
-    model_gen = GEN(num_classes, hidden_size)
-    model_gen.cuda(1)
+    model_gen = GEN(num_classes)
+    model_gen.cuda(0)
     criterion_gen = torch.nn.MSELoss() 
-    optimizer_gen = torch.optim.SGD(model_gen.parameters(), lr=0.006)
+    optimizer_gen = torch.optim.SGD(model_gen.parameters(), lr=0.001)
     print(model_gen)
     x_axis = []
     y_axis = []
 
-    for epoch in range(1):
-      dataset = DataLoader(data, batch_size=settings.data_loader_batch_size, shuffle=False)
+    for epoch in range(2):
+      print(epoch)
+      dataset = DataLoader(data, batch_size=settings.batch_size, shuffle=True, collate_fn=SampleDataset)
       for i, batch in enumerate(dataset): #тренируем сеть
-        labels = batch[-1::].type(dtype=torch.float).view(1, 1).cuda(1)
-        #print(labels.size(), flush=True)
-        inputs = batch[:-1:].clone().detach().requires_grad_(True).float().view(1, num_classes).cuda(1)
-        #print(inputs.size(), flush=True)
+        labels = batch[0][-1::].type(dtype=torch.float).view(1, 1).cuda(0)
+        print(labels, flush=True)
+        inputs = batch[0][:-1:].clone().detach().requires_grad_(True).float().view(1, 1, num_classes*5).cuda(0)
+        #print(inputs, flush=True)
         times = 0
         while True:
-          outputs = model_gen(inputs)
           optimizer_gen.zero_grad()
+          outputs = model_gen(inputs)
           loss = criterion_gen(outputs, labels)
+          print(loss, flush=True)
           #x_axis.append(len(x_axis))
           #y_axis.append(loss.item())
           loss.backward()
           optimizer_gen.step()
           #print('Epoch_gen: {}, Time: {}, loss: {:.6}'.format(epoch, times + 1, loss.item()), flush=True)
           times += 1
-          if times > 6:
+          if times > 2:
             break
+
+    torch.save(model_gen.state_dict(), 'transformer_add.pth')
 
     #plt.clf()
     #plt.plot(x_axis, y_axis, 'go', label='Loss', alpha=0.5)
@@ -251,20 +254,21 @@ def GEN(): #####################################################################
     #plt.savefig('gen_loss.png')
 
     print("Learning finished!")
+
   test_data = []
-  path = '../selam/test_data_locus_0.9_generation_20.txt'
+  path = '../selam/test_data_gen_20.txt'
   file = open(path, 'r')
   for line in file:
     array = line.split('\t')
-    test_data += [float(array[2])]
+    test_data += [float(array[2]), float(array[3]), float(array[4]), float(array[5]), float(array[6])]
   file.close()
-  test_data = torch.tensor(test_data).cuda(1)
+  test_data = torch.tensor(test_data).float().view(1, 1, num_classes*5).cuda(0)
   test_outputs = model_gen(test_data)
-  print(test_outputs)
+  print('TEST: ', test_outputs/100)
 
-p1 = Process(target=SLS)
-p1.start()
-#p2 = Process(target=GEN)
-#p2.start()
-p1.join()
-#p2.join()
+#p1 = Process(target=SLS)
+#p1.start()
+p2 = Process(target=GEN)
+p2.start()
+#p1.join()
+p2.join()

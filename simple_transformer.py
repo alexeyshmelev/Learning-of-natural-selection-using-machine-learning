@@ -7,7 +7,7 @@ class Attention(nn.Module):
   def __init__(self):
     super(Attention, self).__init__()
     #self.prep = nn.Linear(6, 1)
-    encoder_layers = nn.TransformerEncoderLayer(d_model=6, nhead=6, dim_feedforward=2048, dropout=0)
+    encoder_layers = nn.TransformerEncoderLayer(d_model=6, nhead=6, dim_feedforward=6000, dropout=0)
     self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=2)
     self.decoder = nn.Linear(6, 1)
     self.m = nn.Softmax(dim=1)
@@ -27,10 +27,10 @@ class PositionalEncoding(nn.Module):
     #print(pe)
     position = torch.arange(0, 10, dtype=torch.float).unsqueeze(1)
     #print(position)
-    div_term = torch.exp(torch.arange(0, 6, 2).float() * (-math.log(10000.0) / 6))
+    div_term = torch.exp(torch.arange(0, 6, 1).float() * (-math.log(10000.0) / 6))
     #print(div_term)
-    pe[:, 0::2] = torch.sin(position * div_term)
-    pe[:, 1::2] = torch.cos(position * div_term)
+    pe[:, :] = torch.sin(position * div_term)
+    #pe[:, 1::2] = torch.cos(position * div_term)
     #print(pe)
     pe = pe.unsqueeze(0).transpose(0, 1)
     self.register_buffer('pe', pe)
@@ -53,7 +53,7 @@ def main():
   optimizer = optim.Adam(model.parameters(), lr=0.001)
   criterion = nn.CrossEntropyLoss()
 
-  for epoch in range(6000):
+  for epoch in range(10000):
     input_copy = input[epoch % 10]
     #input_copy = [[i / 10 for i in j] for j in input_copy]
     #print(input_copy)

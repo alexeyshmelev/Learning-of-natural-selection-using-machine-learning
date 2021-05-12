@@ -7,9 +7,6 @@ This is a joint project with [Me](github.com/Grenlex), [Mikhail Shishking]() and
 ## Roles
 
 * [Alexey Shmelev](github.com/Grenlex) - code, algorithms in terms of Programing and Bioinformatics
-* [Mikhail Shishking]() - algorithms in termth of Math and Bioinformatics
-* [Tigran Apresyan]() - configuring of NNs
-
 ## About
 
 Here are given three folders: *rnn*, *selam* and *tasks*. Let's define what each of them is dedicated for:

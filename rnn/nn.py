@@ -22,7 +22,7 @@ train_number = settings.train_number
 dim = settings.dim
 line_format = '%.' + str(dim) + 'f'
 
-def SLS(): ##########################################################################################################################################################################################################
+def SLS(): #пытались определять позицию под отбором с помощью трансформера, но точность была очень маленькая, поэтому данная функция пока что не используется, сейчас применяется старая архитектура с использованием RNN 
 
   def FormData(train_number, class_number):
 
@@ -61,11 +61,11 @@ def SLS(): #####################################################################
         return (self.samples[index])
 
 
-  class SLS(nn.Module):
+  class SLS(nn.Module): 
 
     def __init__(self, gen_num_classes):
       super(SLS, self).__init__() 
-      encoder_layers = nn.TransformerEncoderLayer(d_model=gen_num_classes, nhead=1, dim_feedforward=10000, dropout=0) # dim_feedforward=2048 --- for generation, 
+      encoder_layers = nn.TransformerEncoderLayer(d_model=gen_num_classes, nhead=1, dim_feedforward=10000, dropout=0)
       self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=1)
       self.decoder = nn.Linear(gen_num_classes, gen_num_classes)
 

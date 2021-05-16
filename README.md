@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a joint project with [Me](github.com/Grenlex), [Mikhail Shishking]() and [Tigran Apresyan](). Also, let me say in advance that file called ml.py are stored here just as the first example of our work. It was written using **numpy** and now this file doesn't affect our main program.
+This is a project of [Me](github.com/Grenlex). Also, let me say in advance that most of files in this repository are stored here just as the first example of our work. It was written using **numpy** and **pytorch** and this file doesn't affect our main program.
 
 ## Roles
 
@@ -11,17 +11,27 @@ This is a joint project with [Me](github.com/Grenlex), [Mikhail Shishking]() and
 
 Here are given three folders: *rnn*, *selam* and *tasks*. Let's define what each of them is dedicated for:
 
-* rnn - this folder store the major part of our work, thus you can finde code of the NN and the important file with settings there
+* rnn - this folder store the major part of our work, thus you can find code of the NN (and their saved states) and the important file with settings there
 * selam - store the bash script which allow you to quickly generate data to train NN using SELAM generator
 * tasks - mainly store .sbatch files which are used to run programs using SLURM
 
 ## Progress
 
-- [ ] Create bidirectional RNN in order to find part of genome which is under natural selection
+- [X] Create bidirectional RNN for finding part of genome which is under natural selection
     - [X] Write working code itself
-    - [ ] Opimize it for better performance in training results
-- [ ] Create feedforward neural network using regression for finding generation where data was taken from
+    - [X] Opimize it for better performance in training results
+- [X] Create Transformer (regression task) for finding generation where data was taken from, foce of natural selection and percentage of admixture
     - [X] Write working code itself
-    - [ ]  Opimize it for better performance in training results
-    - [ ] Find optimal mathematical model
+    - [X]  Opimize it for better performance in training results
+    - [X] Find optimal mathematical model
+- [X] Create Transformer (binary classification) for finding if the natural selection was
 - [X] Make program to work parallel
+- [X] Create GUI using PyQt
+
+## Compilation
+
+You can compile my programm by your own using  *Pyinstaller* with the following command (file app.spec you can find in this repository)
+
+```
+pyinstaller --noconsole --onefile app.spec
+```

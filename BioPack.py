@@ -11,8 +11,6 @@ import torch
 import numpy as np
 import torch.nn as nn
 from random import randint
-import threading
-import time
 
 
 class SLS(nn.Module):
@@ -121,39 +119,39 @@ class INT(nn.Module):
 class TOF(nn.Module):
 
     def __init__(self, d_model, nhead, dim_feedforward=60000, dropout=0):
-      super(TOF, self).__init__()
-      self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-    # Implementation of Feedforward model
-      self.linear1 = nn.Linear(d_model, dim_feedforward)
-      self.dropout = nn.Dropout(dropout)
-      self.linear2 = nn.Linear(dim_feedforward, d_model)
-      self.dropout1 = nn.Dropout(dropout)
-      self.dropout2 = nn.Dropout(dropout)
-      self.activation = nn.ReLU()
-      self.decoder_1 = nn.Linear(5, 20000)
-      self.decoder_2 = nn.Linear(20000, 10000)
-      self.decoder_3 = nn.Linear(10000, 5000)
-      self.decoder_4 = nn.Linear(5000, 1000)
-      self.decoder_5 = nn.Linear(1000, 1)
-      self.decoder_6 = nn.Linear(100, 2)
-      self.tg = nn.Tanh()
-      self.sm = nn.Softmax(dim=1)
+        super(TOF, self).__init__()
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        # Implementation of Feedforward model
+        self.linear1 = nn.Linear(d_model, dim_feedforward)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(dim_feedforward, d_model)
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+        self.activation = nn.ReLU()
+        self.decoder_1 = nn.Linear(5, 20000)
+        self.decoder_2 = nn.Linear(20000, 10000)
+        self.decoder_3 = nn.Linear(10000, 5000)
+        self.decoder_4 = nn.Linear(5000, 1000)
+        self.decoder_5 = nn.Linear(1000, 1)
+        self.decoder_6 = nn.Linear(1000, 2)
+        self.tg = nn.Tanh()
+        self.sm = nn.Softmax(dim=1)
 
     def forward(self, src, weights):
-      src2, attn = self.self_attn(src, src, src)
-      if weights == True:
-        print('ATTENTION WEIGHTS', attn)
-      src = src + self.dropout1(src2)
-      src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
-      src = src + self.dropout2(src2)
-      output = self.decoder_1(src.view(100, 5))
-      output = self.decoder_2(output.view(100, 20000))
-      output = self.decoder_3(output.view(100, 10000))
-      output = self.decoder_4(output.view(100, 5000))
-      output = self.decoder_5(output.view(100, 1000)).view(1, 100)
-      #output = self.tg(output)
-      output = self.decoder_6(output.view(1, 100)).view(1, 2)
-      return output
+        src2, attn = self.self_attn(src, src, src)
+        if weights == True:
+            print('ATTENTION WEIGHTS', attn)
+        src = src + self.dropout1(src2)
+        src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
+        src = src + self.dropout2(src2)
+        output = self.decoder_1(src.view(1000, 5))
+        output = self.decoder_2(output.view(1000, 20000))
+        output = self.decoder_3(output.view(1000, 10000))
+        output = self.decoder_4(output.view(1000, 5000))
+        output = self.decoder_5(output.view(1000, 1000)).view(1, 1000)
+        # output = self.tg(output)
+        output = self.decoder_6(output.view(1, 1000)).view(1, 2)
+        return output
 
 
 class AnalyzeTimeGap(QThread):
@@ -170,7 +168,8 @@ class AnalyzeTimeGap(QThread):
     def run(self):
         device = torch.device('cpu')
         model_int = INT(5, 5)  # определяем класс с помощью уже натренированной сети
-        model_int.load_state_dict(torch.load('transformer_inf_v_1_0_0.pth', map_location=device))
+        #model_int.load_state_dict(torch.load('transformer_inf_v_1_0_0.pth', map_location=device))
+        model_int.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_inf_v_1_0_0.pth'), map_location=device))
         model_int.eval()
 
         count = 0
@@ -225,9 +224,10 @@ class Existence(QThread):
         answer = ''
         device = torch.device('cpu')
         model_tof = TOF(5, 5)  # определяем класс с помощью уже натренированной сети
-        model_tof.load_state_dict(torch.load('transformer_tof_v_1_0_0.pth', map_location=device))
+        #model_tof.load_state_dict(torch.load('transformer_tof_v_1_0_0.pth', map_location=device))
+        model_tof.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_tof_v_1_0_0.pth'), map_location=device))
         model_tof.eval()
-        m = nn.LogSoftmax(dim=1)
+        m = nn.Softmax(dim=1)
 
         count = 0
         temp_data = []
@@ -245,20 +245,20 @@ class Existence(QThread):
                 temp_data[0] *= 10
                 temp_data[1] *= 1000
                 temp_data[2] *= 1000
-                temp_data[3] *= 1000000
-                temp_data[4] *= 10000000
+                temp_data[3] *= 10000000
+                temp_data[4] *= 1000000
                 test_data += temp_data
                 temp_data = []
             file.close()
-            test_data = torch.tensor(test_data).float().view(100, 1, 5)
+            test_data = torch.tensor(test_data).float().view(1000, 1, 5)
             test_outputs = model_tof(test_data, False)
-            print(m(test_outputs))
-            test_outputs = np.argmax(m(model_tof(test_data, False)).cpu().detach().numpy().flatten())
-            if test_outputs == 0:
+            arg = np.argmax(m(test_outputs).cpu().detach().numpy().flatten())
+            prob = max(m(test_outputs).cpu().detach().numpy().flatten())
+            if arg == 0:
                 answer = 'No'
-            if test_outputs == 1:
+            if arg == 1:
                 answer = 'Yes'
-            self.result += 'Initial: {}, Existence of natural selection: {}'.format(generation, answer) + '\n'
+            self.result += 'Initial: {}, Existence of natural selection: {} ------ with the probability of {}'.format(generation, answer, round(prob, 4)) + '\n'
             count = int(step / len(os.listdir(self.folder)) * 100)
             self.count_changed.emit(count)
 
@@ -279,19 +279,23 @@ class Statistics(QThread):
         device = torch.device('cpu')
 
         model_sls = SLS(1, 1, 1, 100, 100)  # определяем класс с помощью уже натренированной сети
-        model_sls.load_state_dict(torch.load('rnn_v_1_0_0.pth', map_location=device))
+        #model_sls.load_state_dict(torch.load('rnn_v_1_0_0.pth', map_location=device))
+        model_sls.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'rnn_v_1_0_0.pth'), map_location=device))
         model_sls.eval()
 
         model_gen = GEN(100)  # определяем класс с помощью уже натренированной сети
-        model_gen.load_state_dict(torch.load('transformer_gen_v_1_0_0.pth', map_location=device))
+        #model_gen.load_state_dict(torch.load('transformer_gen_v_1_0_0.pth', map_location=device))
+        model_gen.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_gen_v_1_0_0.pth'), map_location=device))
         model_gen.eval()
 
         model_frc = FRC(100)  # определяем класс с помощью уже натренированной сети
-        model_frc.load_state_dict(torch.load('transformer_force_v_1_0_0.pth', map_location=device))
+        #model_frc.load_state_dict(torch.load('transformer_force_v_1_0_0.pth', map_location=device))
+        model_frc.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_force_v_1_0_0.pth'), map_location=device))
         model_frc.eval()
 
         model_adm = ADM(100)  # определяем класс с помощью уже натренированной сети
-        model_adm.load_state_dict(torch.load('transformer_adm_v_1_0_0.pth', map_location=device))
+        #model_adm.load_state_dict(torch.load('transformer_adm_v_1_0_0.pth', map_location=device))
+        model_adm.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_adm_v_1_0_0.pth'), map_location=device))
         model_adm.eval()
 
         m = nn.Softmax(dim=1)
@@ -358,7 +362,7 @@ class App(QMainWindow):
 
         self.resize(1200, 900)
         self.setWindowTitle('BioPack v2.0.0')
-        self.setWindowIcon(QIcon('BioPack.png'))
+        self.setWindowIcon(QIcon(os.path.join(sys._MEIPASS, 'BioPack.png')))
         #stackedLayout = QStackedLayout()
         menuBar = self.menuBar()
         toolsMenu = menuBar.addMenu('Tools')
@@ -388,7 +392,7 @@ class App(QMainWindow):
 
         response = requests.get('##########')
         response = response.text.split('.')
-        if int(response[0]) > 1 or int(response[1]) > 0 or int(response[2]) > 0:
+        if int(response[0]) > 2 or int(response[1]) > 0 or int(response[2]) > 0:
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Question)
             msgBox.setText("New version (" + response[0] + "." + response[1] + "." + response[2] + ") of BioPack available for downloading. Do you want to visit our GitHub to download latest version?")

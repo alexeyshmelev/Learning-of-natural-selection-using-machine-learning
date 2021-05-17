@@ -38,4 +38,4 @@ pyinstaller --noconsole --onefile app.spec
 
 Training results of Transformer (existence of natural selection):
 
-![](https://github.com/alexeyshmelev/Learning-of-natural-selection-using-machine-learning/blob/1337dfba9f4d3986b087aae5d3ec980be8dbcc72/tof_loss.png)
+![]<img src="https://github.com/alexeyshmelev/Learning-of-natural-selection-using-machine-learning/blob/1337dfba9f4d3986b087aae5d3ec980be8dbcc72/tof_loss.png" width="100%">

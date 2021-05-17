@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a project of [Me](github.com/Grenlex). Also, let me say in advance that most of files in this repository are stored here just as the first example of our work. It was written using **numpy** and **pytorch** and this file doesn't affect our main program.
+This is a project of [Me](github.com/alexeyshmelev). Also, let me say in advance that most of files in this repository are stored here just as the first example of our work. It was written using **numpy** and **pytorch** and this file doesn't affect our main program.
 
 ## Roles
 

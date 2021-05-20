@@ -42,4 +42,4 @@ Training results of Transformer (existence of natural selection):
 
 How TOF neural network works:
 
-<img src="https://github.com/alexeyshmelev/Learning-of-natural-selection-using-machine-learning/blob/cf804eada9bfd066cba258ca132322216dc808e0/How_it_works.pdf">
+![How it works](https://user-images.githubusercontent.com/60858323/118982886-8732b100-b984-11eb-9dc2-6ad4bbaa5dc0.PNG)

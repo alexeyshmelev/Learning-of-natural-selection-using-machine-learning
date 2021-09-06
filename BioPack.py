@@ -82,7 +82,38 @@ class ADM(nn.Module):
 
 
 class INT(nn.Module):
-    def __init__(self, d_model, nhead, dim_feedforward=100000, dropout=0):
+    # def __init__(self):
+    #     super(INT, self).__init__()
+    #     self.conv1 = nn.Conv2d(1, 128, kernel_size=(5, 1), stride=1, padding=(2, 0))  # (1000, 5)
+    #     self.mp1 = nn.MaxPool2d(kernel_size=(5, 1), padding=0)  # (200, 5)
+    #     self.conv2 = nn.Conv2d(128, 64, kernel_size=(5, 1), stride=1, padding=(2, 0))  # (200, 5)
+    #     self.mp2 = nn.MaxPool2d(kernel_size=(5, 1), padding=0)  # (40, 5)
+    #     self.conv3 = nn.Conv2d(64, 32, kernel_size=(5, 1), stride=1, padding=(2, 0))  # (40, 5)
+    #     self.mp3 = nn.MaxPool2d(kernel_size=(5, 1), padding=0)  # (8, 5)
+    #     self.dropout = nn.Dropout()
+    #     self.fc1 = nn.Linear(1280, 640)
+    #     self.fc2 = nn.Linear(640, 320)
+    #     self.fc3 = nn.Linear(320, 160)
+    #     self.fc4 = nn.Linear(160, 30)
+    #     self.relu = nn.ReLU()
+    #     self.sm = nn.Softmax(dim=1)
+
+    # def forward(self, src):
+    #     output = self.relu(self.conv1(src))
+    #     output = self.mp1(output)
+    #     output = self.relu(self.conv2(output))
+    #     output = self.mp2(output)
+    #     output = self.relu(self.conv3(output))
+    #     output = self.mp3(output)
+    #     output = self.dropout(output)
+    #     output = self.fc1(output.view(1, 1280))
+    #     output = self.fc2(output)
+    #     output = self.fc3(output)
+    #     output = self.fc4(output)
+    #
+    #     return self.sm(output.view(3, 10)).view(1, 30)
+
+    def __init__(self, d_model, nhead, dim_feedforward=6000, dropout=0.1):
         super(INT, self).__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         # Implementation of Feedforward model
@@ -92,34 +123,41 @@ class INT(nn.Module):
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
         self.activation = nn.ReLU()
-        self.decoder_1 = nn.Linear(5, 20000)
-        self.decoder_2 = nn.Linear(20000, 10000)
-        self.decoder_3 = nn.Linear(10000, 5000)
-        self.decoder_4 = nn.Linear(5000, 1000)
-        self.decoder_5 = nn.Linear(10000, 1)
+        self.decoder_1 = nn.Linear(5, 3000)
+        self.decoder_2 = nn.Linear(3000, 1500)
+        self.decoder_3 = nn.Linear(1500, 750)
+        self.decoder_4 = nn.Linear(750, 100)
+        self.decoder_5 = nn.Linear(1000, 1)
+        self.decoder_6 = nn.Linear(100, 30)
+        # self.norm1 = nn.LayerNorm(d_model)
+        # self.norm2 = nn.LayerNorm(d_model)
         self.tg = nn.Tanh()
         self.sm = nn.Softmax(dim=1)
 
     def forward(self, src, weights):
         src2, attn = self.self_attn(src, src, src)
         if weights == True:
-            print('ATTENTION WEIGHTS', attn.shape)
+            print('ATTENTION WEIGHTS', attn)
         src = src + self.dropout1(src2)
+        # src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
         src = src + self.dropout2(src2)
+        # src = self.norm2(src)
         output = self.decoder_1(src.view(1000, 5))
-        output = self.decoder_2(output.view(1000, 20000))
-        output = self.decoder_3(output.view(1000, 10000))
-        output = self.decoder_4(output.view(1000, 5000))
-        output = self.decoder_5(output.view(100, 10000)).view(1, 100)
-        #output = self.tg(output)
+        output = self.decoder_2(output.view(1000, 3000))
+        output = self.decoder_3(output.view(1000, 1500))
+        output = self.decoder_4(output.view(1000, 750))
+        output = self.decoder_5(output.view(100, 1000))
+        output = self.decoder_6(output.view(1, 100)).view(1, 30)
+        # output = self.tg(output)
+
         return output
 
 
 class TOF(nn.Module):
 
-    def __init__(self, d_model, nhead, dim_feedforward=60000, dropout=0):
-        super(TOF, self).__init__()
+    def __init__(self, d_model, nhead, dim_feedforward=2000, dropout=0):
+        super(INT, self).__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
@@ -128,12 +166,12 @@ class TOF(nn.Module):
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
         self.activation = nn.ReLU()
-        self.decoder_1 = nn.Linear(5, 20000)
-        self.decoder_2 = nn.Linear(20000, 10000)
-        self.decoder_3 = nn.Linear(10000, 5000)
-        self.decoder_4 = nn.Linear(5000, 1000)
+        self.decoder_1 = nn.Linear(5, 1000)
+        self.decoder_2 = nn.Linear(1000, 500)
+        self.decoder_3 = nn.Linear(500, 250)
+        self.decoder_4 = nn.Linear(250, 100)
         self.decoder_5 = nn.Linear(1000, 1)
-        self.decoder_6 = nn.Linear(1000, 2)
+        # self.decoder_6 = nn.Linear(10, 1)
         self.tg = nn.Tanh()
         self.sm = nn.Softmax(dim=1)
 
@@ -145,13 +183,13 @@ class TOF(nn.Module):
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
         src = src + self.dropout2(src2)
         output = self.decoder_1(src.view(1000, 5))
-        output = self.decoder_2(output.view(1000, 20000))
-        output = self.decoder_3(output.view(1000, 10000))
-        output = self.decoder_4(output.view(1000, 5000))
-        output = self.decoder_5(output.view(1000, 1000)).view(1, 1000)
+        output = self.decoder_2(output.view(1000, 1000))
+        output = self.decoder_3(output.view(1000, 500))
+        output = self.decoder_4(output.view(1000, 250))
+        output = self.decoder_5(output.view(1000, 100)).view(1, 1000)
         # output = self.tg(output)
         output = self.decoder_6(output.view(1, 1000)).view(1, 2)
-        return output
+        return output, attn
 
 
 class AnalyzeTimeGap(QThread):
@@ -160,17 +198,61 @@ class AnalyzeTimeGap(QThread):
     def __init__(self, folder, callback):
         super().__init__()
         self.folder = folder
-        self.result = ''
-        self.generation = None
-        self.difference = None
-        self.finished.connect(lambda: callback(self.result, self.generation, self.difference))
+        self.result = []
+        self.prob_list = []
+        self.finished.connect(lambda: callback(self.result, self.prob_list))
 
     def run(self):
         device = torch.device('cpu')
-        model_int = INT(5, 5)  # определяем класс с помощью уже натренированной сети
-        #model_int.load_state_dict(torch.load('transformer_inf_v_1_0_0.pth', map_location=device))
-        model_int.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_inf_v_1_0_0.pth'), map_location=device))
+        # model_int = INT()  # определяем класс с помощью уже натренированной сети
+        model_int = INT(5, 5)
+        model_int.load_state_dict(torch.load('transformer_inf_v_1_0_0_THE_LAST_BEST.pth', map_location=device))
+        # model_int.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_inf_v_1_0_0.pth'), map_location=device))
         model_int.eval()
+
+        # m = nn.Softmax(dim=1)
+        m = nn.Sigmoid()
+
+        gen_int = [(i + 1) * 100 for i in range(10)]
+
+        adm_start = 0.0002
+        adm_end = 0.01
+        l = np.log(adm_end) - np.log(adm_start)
+        adm_int = [np.exp(l * (i + 1) / 10 + np.log(adm_start)) for i in range(10)]
+
+        frc_start = 0.0005
+        frc_end = 0.02
+        l = np.log(frc_end) - np.log(frc_start)
+        frc_int = [np.exp(l * (i + 1) / 10 + np.log(frc_start)) for i in range(10)]
+
+        def FormTarget(gen, adm, frc):
+
+            gen_array = np.full(10, 0)
+            adm_array = np.full(10, 0)
+            frc_array = np.full(10, 0)
+
+            adm_num = 0
+            frc_num = 0
+            gen_num = 0
+
+            for k, elem in enumerate(gen_int):
+                if gen == elem:
+                    gen_num = k
+
+            for k, elem in enumerate(adm_int):
+                if adm > elem:
+                    adm_num = k + 1
+
+            for k, elem in enumerate(frc_int):
+                if frc > elem:
+                    frc_num = k + 1
+
+            gen_array[gen_num] = 1
+            adm_array[adm_num] = 1
+            frc_array[frc_num] = 1
+            arr = np.concatenate([gen_array, adm_array, frc_array]).reshape((3, 10))
+
+            return arr
 
         count = 0
         data_list_generation = []
@@ -180,6 +262,8 @@ class AnalyzeTimeGap(QThread):
 
         for step in range(len(os.listdir(self.folder))):
             generation = float(file_list[step].split('_')[0])
+            admixture = float(file_list[step].split('_')[1])
+            force = float(file_list[step].split('_')[2])
             test_data = []
             exact_file = self.folder + '/' + file_list[step]
             file = open(exact_file, 'r')
@@ -195,20 +279,21 @@ class AnalyzeTimeGap(QThread):
                 test_data += temp_data
                 temp_data = []
             file.close()
+            # test_data = torch.tensor(test_data).float().view(1, 1, 1000, 5)
             test_data = torch.tensor(test_data).float().view(1000, 1, 5)
-            test_outputs = model_int(test_data, False)
+            test_outputs = model_int(test_data, False).view(3, 10)
             # test_outputs = m(test_outputs).cpu().detach().numpy().flatten()
             # max = np.argmax(test_outputs)
-            test_outputs = test_outputs.cpu().detach().numpy().flatten()
-            test_outputs = np.sum(test_outputs)
-            data_list_generation.append(test_outputs)
-            data_list_difference.append(abs(test_outputs-generation))
-            self.result += 'Initial: {}, Got: {}, Difference {}'.format(generation, test_outputs, abs(test_outputs-generation)) + '\n'
+            # test_outputs = np.sum(test_outputs.cpu().detach().numpy(), axis=1)
+            test_outputs = test_outputs.cpu().detach().numpy()
+            self.prob_list += [test_outputs]
+            targets = FormTarget(generation, admixture, force)
+            gen_class = np.argmax(targets[0])
+            adm_class = np.argmax(targets[1])
+            frc_class = np.argmax(targets[2])
+            self.result += ['Generation: {}, Admixture: {}, Force: {}'.format(generation, admixture, force) + '\n' + 'Initial classes: generation - {}, admixture - {}, force - {}'.format(gen_class, adm_class, frc_class) + '\n']
             count = int(step / len(os.listdir(self.folder)) * 100)
             self.count_changed.emit(count)
-
-        self.generation = data_list_generation
-        self.difference = data_list_difference
 
 
 class Existence(QThread):
@@ -217,19 +302,22 @@ class Existence(QThread):
     def __init__(self, folder, callback):
         super().__init__()
         self.folder = folder
-        self.result = ''
-        self.finished.connect(lambda: callback(self.result))
+        self.result = []
+        self.attn_list = []
+        self.finished.connect(lambda: callback(self.result, self.attn_list))
 
     def run(self):
         answer = ''
         device = torch.device('cpu')
         model_tof = TOF(5, 5)  # определяем класс с помощью уже натренированной сети
-        #model_tof.load_state_dict(torch.load('transformer_tof_v_1_0_0.pth', map_location=device))
-        model_tof.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_tof_v_1_0_0.pth'), map_location=device))
+        model_tof.load_state_dict(torch.load('transformer_tof_v_1_0_0.pth', map_location=device))
+        # model_tof.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_tof_v_1_0_0.pth'), map_location=device))
         model_tof.eval()
         m = nn.Softmax(dim=1)
 
         count = 0
+        wrong_plus = 0
+        wrong_minus = 0
         temp_data = []
         file_list = sorted(os.listdir(self.folder))
 
@@ -251,16 +339,22 @@ class Existence(QThread):
                 temp_data = []
             file.close()
             test_data = torch.tensor(test_data).float().view(1000, 1, 5)
-            test_outputs = model_tof(test_data, False)
+            test_outputs, attn = model_tof(test_data, False)
+            self.attn_list += [attn.squeeze().cpu().detach().numpy()]
             arg = np.argmax(m(test_outputs).cpu().detach().numpy().flatten())
             prob = max(m(test_outputs).cpu().detach().numpy().flatten())
             if arg == 0:
                 answer = 'No'
             if arg == 1:
                 answer = 'Yes'
-            self.result += 'Initial: {}, Existence of natural selection: {} ------ with the probability of {}'.format(generation, answer, round(prob, 4)) + '\n'
+            # if answer == 'Yes' and generation <= 500:
+            #     wrong_minus += 1
+            # if answer == 'No' and generation > 500:
+            #     wrong_plus += 1
+            self.result += ['Initial: {}, Existence of natural selection: {} ------ with the probability of {}'.format(file_list[step], answer, round(prob, 4)) + '\n']
             count = int(step / len(os.listdir(self.folder)) * 100)
             self.count_changed.emit(count)
+        print('Wrong plus: {}, wrong minus: {}'.format(wrong_plus, wrong_minus))
 
 
 class Statistics(QThread):
@@ -279,23 +373,23 @@ class Statistics(QThread):
         device = torch.device('cpu')
 
         model_sls = SLS(1, 1, 1, 100, 100)  # определяем класс с помощью уже натренированной сети
-        #model_sls.load_state_dict(torch.load('rnn_v_1_0_0.pth', map_location=device))
-        model_sls.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'rnn_v_1_0_0.pth'), map_location=device))
+        model_sls.load_state_dict(torch.load('rnn_v_1_0_0.pth', map_location=device))
+        # model_sls.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'rnn_v_1_0_0.pth'), map_location=device))
         model_sls.eval()
 
         model_gen = GEN(100)  # определяем класс с помощью уже натренированной сети
-        #model_gen.load_state_dict(torch.load('transformer_gen_v_1_0_0.pth', map_location=device))
-        model_gen.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_gen_v_1_0_0.pth'), map_location=device))
+        model_gen.load_state_dict(torch.load('transformer_gen_v_1_0_0.pth', map_location=device))
+        # model_gen.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_gen_v_1_0_0.pth'), map_location=device))
         model_gen.eval()
 
         model_frc = FRC(100)  # определяем класс с помощью уже натренированной сети
-        #model_frc.load_state_dict(torch.load('transformer_force_v_1_0_0.pth', map_location=device))
-        model_frc.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_force_v_1_0_0.pth'), map_location=device))
+        model_frc.load_state_dict(torch.load('transformer_force_v_1_0_0.pth', map_location=device))
+        # model_frc.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_force_v_1_0_0.pth'), map_location=device))
         model_frc.eval()
 
         model_adm = ADM(100)  # определяем класс с помощью уже натренированной сети
-        #model_adm.load_state_dict(torch.load('transformer_adm_v_1_0_0.pth', map_location=device))
-        model_adm.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_adm_v_1_0_0.pth'), map_location=device))
+        model_adm.load_state_dict(torch.load('transformer_adm_v_1_0_0.pth', map_location=device))
+        # model_adm.load_state_dict(torch.load(os.path.join(sys._MEIPASS, 'transformer_adm_v_1_0_0.pth'), map_location=device))
         model_adm.eval()
 
         m = nn.Softmax(dim=1)
@@ -361,8 +455,9 @@ class App(QMainWindow):
     def initui(self):
 
         self.resize(1200, 900)
-        self.setWindowTitle('BioPack v2.0.0')
-        self.setWindowIcon(QIcon(os.path.join(sys._MEIPASS, 'BioPack.png')))
+        self.setWindowTitle('BioPack v2.1.0')
+        # self.setWindowIcon(QIcon(os.path.join(sys._MEIPASS, 'BioPack.png')))
+        #self.setWindowIcon(QIcon('BioPack.png'))
         #stackedLayout = QStackedLayout()
         menuBar = self.menuBar()
         toolsMenu = menuBar.addMenu('Tools')
@@ -390,7 +485,7 @@ class App(QMainWindow):
         self.time_gap = False
         self.restart()
 
-        response = requests.get('##########')
+        response = requests.get('http://grenlex.com/bioinformatics/biopack_version.php')
         response = response.text.split('.')
         if int(response[0]) > 2 or int(response[1]) > 0 or int(response[2]) > 0:
             msgBox = QMessageBox()
@@ -501,7 +596,7 @@ class App(QMainWindow):
     def onCountChanged(self, value):
         self.progress.setValue(value)
 
-    def tof_results(self, result):
+    def tof_results(self, result, attn_list):
         widget = QWidget()
         widget.setAutoFillBackground(True)
         palette = widget.palette()
@@ -515,12 +610,29 @@ class App(QMainWindow):
         title_result = QLabel('Results:')
         title_result.setFont(QFont("San-Serif", 17, QFont.Bold))
         title_result.setStyleSheet('''color: rgb(255, 255, 255);''')
-
-        result = QLabel(result)
-        result.setFont(QFont("San-Serif", 12))
-        result.setStyleSheet('''color: rgb(255, 255, 255);''')
         page.addWidget(title_result, 0, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
-        page.addWidget(result, 1, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        row = 0
+
+        for i in range(len(attn_list)):
+            plt.clf()
+            plt.imshow(attn_list[i])
+            plt.colorbar()
+            plt.savefig('attention' + str(i) + '.png')
+
+            row += 1
+            res = QLabel(result[i])
+            res.setFont(QFont("San-Serif", 12))
+            res.setStyleSheet('''color: rgb(255, 255, 255);''')
+            page.addWidget(res, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+            pixmap = QPixmap('attention' + str(i) + '.png')
+            pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+            lbl = QLabel()
+            lbl.setStyleSheet('''padding-bottom: 30px;''')
+            lbl.setPixmap(pixmap)
+            row += 1
+            page.addWidget(lbl, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
@@ -529,7 +641,7 @@ class App(QMainWindow):
 
         self.setCentralWidget(scroll)
 
-    def time_gap_results(self, result, generation, difference):
+    def time_gap_results(self, result, probs):
         widget = QWidget()
         widget.setAutoFillBackground(True)
         palette = widget.palette()
@@ -544,33 +656,189 @@ class App(QMainWindow):
         title_result.setFont(QFont("San-Serif", 17, QFont.Bold))
         title_result.setStyleSheet('''color: rgb(255, 255, 255);''')
 
-        result = QLabel(result)
-        result.setFont(QFont("San-Serif", 12))
-        result.setStyleSheet('''color: rgb(255, 255, 255);''')
-        page.addWidget(title_result, 0, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
-        page.addWidget(result, 1, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        gen_int = [(i + 1) * 100 for i in range(10)]
 
-        plt.figure(1)
-        plt.hist(generation)
-        plt.savefig('generation.png')
-        plt.figure(2)
-        plt.hist(difference)
-        plt.axvline(x=np.mean(difference))
-        plt.savefig('difference.png')
+        adm_start = 0.0002
+        adm_end = 0.01
+        l = np.log(adm_end) - np.log(adm_start)
+        adm_int = [np.exp(l * (i + 1) / 10 + np.log(adm_start)) for i in range(10)]
 
-        pixmap = QPixmap('generation.png')
-        pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+        frc_start = 0.0005
+        frc_end = 0.02
+        l = np.log(frc_end) - np.log(frc_start)
+        frc_int = [np.exp(l * (i + 1) / 10 + np.log(frc_start)) for i in range(10)]
+
+        def FormTarget(gen, adm, frc):
+
+            gen_array = np.full(10, 0)
+            adm_array = np.full(10, 0)
+            frc_array = np.full(10, 0)
+
+            adm_num = 0
+            frc_num = 0
+            gen_num = 0
+
+            for s, elem in enumerate(gen_int):
+                if gen == elem:
+                    gen_num = s
+
+            for s, elem in enumerate(adm_int):
+                if adm > elem:
+                    adm_num = s + 1
+
+            for s, elem in enumerate(frc_int):
+                if frc > elem:
+                    frc_num = s + 1
+
+            gen_array[gen_num] = 1
+            adm_array[adm_num] = 1
+            frc_array[frc_num] = 1
+            arr = np.concatenate([gen_array, adm_array, frc_array]).reshape((3, 10))
+
+            return arr
+
+        row = 6
+        y = [1 for i in range(10)]
+
+        for i in range(len(probs)):
+            fig, ax = plt.subplots(1, 1)
+            img = ax.imshow(probs[i])
+            y_label_list = ['generation', 'admixture', 'force']
+            x_label_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            ax.set_xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+            ax.set_xticklabels(x_label_list)
+            ax.set_yticks([0, 1, 2])
+            ax.set_yticklabels(y_label_list)
+            # img.xlabel("class")
+            fig.colorbar(img)
+            plt.savefig('probability' + str(i) + '.png', bbox_inches="tight")
+            plt.close()
+
+            row += 1
+            gen_class = np.argmax(probs[i][0])
+            adm_class = np.argmax(probs[i][1])
+            frc_class = np.argmax(probs[i][2])
+            res = QLabel(result[i] + 'Predicted classes: generation - {}, admixture - {}, force - {}'.format(gen_class, adm_class, frc_class) + '\n')
+            res.setFont(QFont("San-Serif", 12))
+            res.setStyleSheet('''color: rgb(255, 255, 255);''')
+            page.addWidget(res, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+            pixmap = QPixmap('probability' + str(i) + '.png')
+            pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+            lbl = QLabel()
+            lbl.setStyleSheet('''padding-bottom: 30px;''')
+            lbl.setPixmap(pixmap)
+            row += 1
+            page.addWidget(lbl, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        interval_str_gen = 'Generation:' + '\n'
+
+        for k, data in enumerate(gen_int):
+            if k == 0:
+                interval_str_gen += 'Interval ' + str(k) + ': from 0 to ' + str(data) + '\n'
+            else:
+                interval_str_gen += 'Interval ' + str(k) + ': from ' + str(gen_int[k-1]) + ' to ' + str(data) + '\n'
+
+        interval_str_adm = 'Admixture: ' + '\n'
+
+        for k, data in enumerate(adm_int):
+            if k == 0:
+                interval_str_adm += 'Interval ' + str(k) + ': from ' + str(round(adm_start, 6)) + ' to ' + str(round(data, 6)) + '\n'
+            else:
+                interval_str_adm += 'Interval ' + str(k) + ': from ' + str(round(adm_int[k-1], 6)) + ' to ' + str(round(data, 6)) + '\n'
+
+        interval_str_frc = 'Force: ' + '\n'
+
+        for k, data in enumerate(frc_int):
+            if k == 0:
+                interval_str_frc += 'Interval ' + str(k) + ': from ' + str(round(frc_start, 6)) + ' to ' + str(round(data, 6)) + '\n'
+            else:
+                interval_str_frc += 'Interval ' + str(k) + ': from ' + str(round(frc_int[k-1], 6)) + ' to ' + str(round(data, 6)) + '\n'
+
+        interval_label = QLabel(interval_str_gen)
+        interval_label.setFont(QFont("San-Serif", 12))
+        interval_label.setStyleSheet('''color: rgb(255, 255, 255);''')
+        page.addWidget(interval_label, 1, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        plt.close()
+        plt.figure(figsize=(12, 1))
+        plt.plot(gen_int, y, '.-g')
+        for i in gen_int:
+            plt.annotate(str(i), (i, 1), (i+0.01, 1.01))
+        plt.axis('off')
+        plt.savefig('gen_intervals.png', bbox_inches="tight")
+        pixmap = QPixmap('gen_intervals.png')
+        pixmap = pixmap.scaled(900, 900, QtCore.Qt.KeepAspectRatio)
         lbl = QLabel()
         lbl.setStyleSheet('''padding-bottom: 30px;''')
         lbl.setPixmap(pixmap)
         page.addWidget(lbl, 2, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
 
-        pixmap = QPixmap('difference.png')
-        pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+        interval_label = QLabel(interval_str_adm)
+        interval_label.setFont(QFont("San-Serif", 12))
+        interval_label.setStyleSheet('''color: rgb(255, 255, 255);''')
+        page.addWidget(interval_label, 3, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        plt.close()
+        plt.figure(figsize=(12, 1))
+        plt.plot(adm_int, y, '.-g')
+        for i in adm_int:
+            plt.annotate(str(round(i, 6)), (i, 1), (i, 1.01), rotation=60)
+        plt.axis('off')
+        plt.savefig('adm_intervals.png', bbox_inches="tight")
+        pixmap = QPixmap('adm_intervals.png')
+        pixmap = pixmap.scaled(900, 900, QtCore.Qt.KeepAspectRatio)
         lbl = QLabel()
         lbl.setStyleSheet('''padding-bottom: 30px;''')
         lbl.setPixmap(pixmap)
-        page.addWidget(lbl, 3, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        page.addWidget(lbl, 4, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        interval_label = QLabel(interval_str_frc)
+        interval_label.setFont(QFont("San-Serif", 12))
+        interval_label.setStyleSheet('''color: rgb(255, 255, 255);''')
+        page.addWidget(interval_label, 5, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        plt.close()
+        plt.figure(figsize=(12, 1))
+        plt.plot(frc_int, y, '.-g')
+        for i in frc_int:
+            plt.annotate(str(round(i, 6)), (i, 1), (i, 1.01), rotation=60)
+        plt.axis('off')
+        plt.savefig('frc_intervals.png', bbox_inches="tight")
+        pixmap = QPixmap('frc_intervals.png')
+        pixmap = pixmap.scaled(900, 900, QtCore.Qt.KeepAspectRatio)
+        lbl = QLabel()
+        lbl.setStyleSheet('''padding-bottom: 30px;''')
+        lbl.setPixmap(pixmap)
+        page.addWidget(lbl, 6, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        # result = QLabel(result)
+        # result.setFont(QFont("San-Serif", 12))
+        # result.setStyleSheet('''color: rgb(255, 255, 255);''')
+        page.addWidget(title_result, 0, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
+        # page.addWidget(result, 1, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        # plt.clf()
+        # plt.figure(1)
+        # plt.hist(generation, label='Distribution of detected generations')
+        # plt.legend(loc='best')
+        # plt.savefig('generation.png')
+        # plt.figure(2)
+        # plt.hist(difference, label='Distribution of difference')
+        # plt.axvline(x=np.mean(difference), color='r', label='Mean difference')
+        # plt.legend(loc='best')
+        # plt.savefig('difference.png')
+        #
+        # pixmap = QPixmap('generation.png')
+        # pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+        # lbl = QLabel()
+        # lbl.setStyleSheet('''padding-bottom: 30px;''')
+        # lbl.setPixmap(pixmap)
+        # page.addWidget(lbl, 2, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        #
+        # pixmap = QPixmap('difference.png')
+        # pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+        # lbl = QLabel()
+        # lbl.setStyleSheet('''padding-bottom: 30px;''')
+        # lbl.setPixmap(pixmap)
+        # page.addWidget(lbl, 3, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)

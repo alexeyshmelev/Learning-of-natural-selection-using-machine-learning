@@ -439,6 +439,98 @@ class Statistics(QThread):
             self.count_changed.emit(count)
 
 
+class Visualization(QThread):
+    count_changed = pyqtSignal(int)
+
+    def __init__(self, folder, callback):
+        super().__init__()
+        self.folder = folder
+        self.result = []
+        self.data = []
+        self.finished.connect(lambda: callback(self.result, self.data))
+
+    def run(self):
+
+        gen_int = [(i + 1) * 100 for i in range(10)]
+
+        adm_start = 0.0002
+        adm_end = 0.01
+        l = np.log(adm_end) - np.log(adm_start)
+        adm_int = [np.exp(l * (i + 1) / 10 + np.log(adm_start)) for i in range(10)]
+
+        frc_start = 0.0005
+        frc_end = 0.02
+        l = np.log(frc_end) - np.log(frc_start)
+        frc_int = [np.exp(l * (i + 1) / 10 + np.log(frc_start)) for i in range(10)]
+
+        def FormTarget(gen, adm, frc):
+
+            gen_array = np.full(10, 0)
+            adm_array = np.full(10, 0)
+            frc_array = np.full(10, 0)
+
+            adm_num = 0
+            frc_num = 0
+            gen_num = 0
+
+            for k, elem in enumerate(gen_int):
+                if gen == elem:
+                    gen_num = k
+
+            for k, elem in enumerate(adm_int):
+                if adm > elem:
+                    adm_num = k + 1
+
+            for k, elem in enumerate(frc_int):
+                if frc > elem:
+                    frc_num = k + 1
+
+            gen_array[gen_num] = 1
+            adm_array[adm_num] = 1
+            frc_array[frc_num] = 1
+            arr = np.concatenate([gen_array, adm_array, frc_array]).reshape((3, 10))
+
+            return arr
+
+        count = 0
+        data_list_generation = []
+        data_list_difference = []
+        temp_data = []
+        file_list = sorted(os.listdir(self.folder))
+
+        for step in range(len(os.listdir(self.folder))):
+            generation = float(file_list[step].split('_')[0])
+            admixture = float(file_list[step].split('_')[1])
+            force = float(file_list[step].split('_')[2])
+            test_data = []
+            exact_file = self.folder + '/' + file_list[step]
+            file = open(exact_file, 'r')
+            for line in file:
+                array = line.split('\t')
+                temp_data += [array[2], array[3], array[4], array[5], array[6]]
+                temp_data = [float(i) if i != '-nan' and i != '-nan\n' else float(0) for i in temp_data]
+                temp_data[0] *= 10
+                temp_data[1] *= 1000
+                temp_data[2] *= 1000
+                temp_data[3] *= 10000000
+                temp_data[4] *= 1000000
+                test_data += temp_data
+                temp_data = []
+            file.close()
+
+            self.data += [test_data]
+
+            targets = FormTarget(generation, admixture, force)
+            gen_class = np.argmax(targets[0])
+            adm_class = np.argmax(targets[1])
+            frc_class = np.argmax(targets[2])
+            self.result += ['Generation: {}, Admixture: {}, Force: {}'.format(generation, admixture, force) + '\n' + 'Initial classes: generation - {}, admixture - {}, force - {}'.format(gen_class, adm_class, frc_class) + '\n']
+            count = int(step / len(os.listdir(self.folder)) * 100)
+            self.count_changed.emit(count)
+
+        self.data = np.array(self.data).reshape((len(os.listdir(self.folder)), 5, 1000))
+
+
 class App(QMainWindow):
 
     def __init__(self):
@@ -448,6 +540,7 @@ class App(QMainWindow):
         self.statistics = None
         self.time_gap = None
         self.tof = None
+        self.vis = None
         self.thread = None
         self.progress = None
         self.initui()
@@ -480,9 +573,14 @@ class App(QMainWindow):
         tof = QAction('Existence', self)
         tof.triggered.connect(self.set_tof)
         modeMenu.addAction(tof)
+        vis = QAction('Data visualization', self)
+        vis.triggered.connect(self.set_vis)
+        modeMenu.addAction(vis)
 
         self.statistics = True
         self.time_gap = False
+        self.tof = False
+        self.vis = False
         self.restart()
 
         response = requests.get('http://grenlex.com/bioinformatics/biopack_version.php')
@@ -503,19 +601,29 @@ class App(QMainWindow):
         self.statistics = True
         self.time_gap = False
         self.tof = False
+        self.vis = False
         self.centralWidget().layout().itemAt(1).widget().setText('Step 1: choose file you want to analyze (Mode: statistics)')
 
     def set_time_gap(self):
         self.statistics = False
         self.time_gap = True
         self.tof = False
+        self.vis = False
         self.centralWidget().layout().itemAt(1).widget().setText('Step 1: choose file you want to analyze (Mode: time gap)')
 
     def set_tof(self):
         self.statistics = False
         self.time_gap = False
         self.tof = True
+        self.vis = False
         self.centralWidget().layout().itemAt(1).widget().setText('Step 1: choose file you want to analyze (Mode: existence)')
+
+    def set_vis(self):
+        self.statistics = False
+        self.time_gap = False
+        self.tof = False
+        self.vis = True
+        self.centralWidget().layout().itemAt(1).widget().setText('Step 1: choose file you want to analyze (Mode: data visualization)')
 
     def show_git_help(self):
         QDesktopServices.openUrl(QUrl('https://github.com/Grenlex/Learning-of-natural-selection-using-machine-learning'))
@@ -532,6 +640,8 @@ class App(QMainWindow):
             hint.setText('Step 1: choose folder you want to analyze (Mode: time gap)')
         if self.tof:
             hint.setText('Step 1: choose folder you want to analyze (Mode: existence)')
+        if self.vis:
+            hint.setText('Step 1: choose folder you want to analyze (Mode: data visualization)')
         hint.setFont(QFont("San-Serif", 10))
         hint.setStyleSheet('''color: rgb(255, 255, 255);''')
 
@@ -577,6 +687,12 @@ class App(QMainWindow):
                 self.thread.start()
                 self.thread.count_changed.connect(self.onCountChanged)
 
+            if self.vis:
+                self.centralWidget().layout().itemAt(1).widget().setText('Processing...')
+                self.thread = Visualization(self.folder, self.draw_data)
+                self.thread.start()
+                self.thread.count_changed.connect(self.onCountChanged)
+
         if self.step == 1:
             folder = QFileDialog.getExistingDirectory(self, 'Open directory', '/home')
             if folder:
@@ -595,6 +711,54 @@ class App(QMainWindow):
 
     def onCountChanged(self, value):
         self.progress.setValue(value)
+
+    def draw_data(self, result, data):
+        print('nice')
+        widget = QWidget()
+        widget.setAutoFillBackground(True)
+        palette = widget.palette()
+        gradient = QLinearGradient(-100, 1000, 1800, -100)
+        gradient.setColorAt(0.0, QColor(0, 150, 115))
+        gradient.setColorAt(1.0, QColor(255, 255, 255))
+        palette.setBrush(QPalette.Window, QBrush(gradient))
+        widget.setPalette(palette)
+        page = QGridLayout(widget)
+
+        title_result = QLabel('Results:')
+        title_result.setFont(QFont("San-Serif", 17, QFont.Bold))
+        title_result.setStyleSheet('''color: rgb(255, 255, 255);''')
+
+        row = 0
+
+        for i in range(len(data)):
+            plt.clf()
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.imshow(data[i])
+            ax.set_aspect('auto')
+            fig.savefig('visualization' + str(i) + '.png')
+            plt.close()
+
+            row += 1
+            res = QLabel(result[i])
+            res.setFont(QFont("San-Serif", 12))
+            res.setStyleSheet('''color: rgb(255, 255, 255);''')
+            page.addWidget(res, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+            pixmap = QPixmap('visualization' + str(i) + '.png')
+            pixmap = pixmap.scaled(700, 700, QtCore.Qt.KeepAspectRatio)
+            lbl = QLabel()
+            lbl.setStyleSheet('''padding-bottom: 30px;''')
+            lbl.setPixmap(pixmap)
+            row += 1
+            page.addWidget(lbl, row, 0, QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(widget)
+
+        self.setCentralWidget(scroll)
 
     def tof_results(self, result, attn_list):
         widget = QWidget()

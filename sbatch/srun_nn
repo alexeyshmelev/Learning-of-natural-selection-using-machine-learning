@@ -1,0 +1,7 @@
+module purge
+module load Python/Anaconda_v11.2020
+source deactivate
+source activate my_py_env
+cd ..
+cd rnn
+srun python rnn.py

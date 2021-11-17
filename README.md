@@ -1,5 +1,9 @@
 # Learning of natural selection using machine learning
 
+## Warning!!!
+
+All activity was moved to ***dev*** branch!!!
+
 ## Introduction
 
 This is a project of [Me](github.com/alexeyshmelev). Also, let me say in advance that most of files in this repository are stored here just as the first example of our work. It was written using **numpy** and **pytorch** and this file doesn't affect our main program.

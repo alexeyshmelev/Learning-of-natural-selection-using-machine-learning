@@ -193,34 +193,34 @@ def INT():
         def __init__(self):
             super(KINT, self).__init__()
 
-            self.initial1 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.initial2 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.initial3 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.initial4 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.initial5 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.initial6 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
+            self.initial1 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
+            self.initial2 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
+            self.initial3 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
+            self.initial4 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
+            self.initial5 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
+            self.initial6 = tf.keras.layers.Conv1D(10, 20, padding='same', kernel_regularizer=tf.keras.regularizers.L2(l2=0.0001), activation="relu")
 
-            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv1_1 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv1_2 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv1_3 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
+            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
+            self.conv1_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv1_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv1_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.attention2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv2_1 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv2_2 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv2_3 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
+            self.attention2 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
+            self.conv2_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv2_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv2_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.attention3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv3_1 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv3_2 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.conv3_3 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
+            self.attention3 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
+            self.conv3_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv3_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv3_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.last1 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
-            self.last2 = tf.keras.layers.Conv1D(64, 20, padding='same', activation="relu")
+            self.last1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.last2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.att1 = tf.keras.layers.Attention()
-            self.att2 = tf.keras.layers.Attention()
-            self.att3 = tf.keras.layers.Attention()
+            self.att1 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
+            self.att2 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
+            self.att3 = tf.keras.layers.MultiHeadAttention(num_heads=10, key_dim=60)
 
             self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
             self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
@@ -231,12 +231,11 @@ def INT():
             self.concat2 = tf.keras.layers.Concatenate()
             self.concat3 = tf.keras.layers.Concatenate()
             self.concat4 = tf.keras.layers.Concatenate()
-            self.reshape = tf.keras.layers.Reshape((96000, ))
+            self.reshape = tf.keras.layers.Reshape((15000, ))
 
             # self.rnn1 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(150))
 
-            self.dense1 = tf.keras.layers.Dense(100)
-            self.dense2 = tf.keras.layers.Dense(10, activation="softmax")
+            self.dense = tf.keras.layers.Dense(10, activation="softmax")
 
 
         def call(self, src):
@@ -262,27 +261,26 @@ def INT():
             output = self.last2(output)
             output = self.pool4(output)
 
+            output_save_1 = self.pool1(output_save_1)  # (1, 250, 64)
+            output_save_2 = self.pool2(output_save_2)  # (1, 250, 64)
+            output_save_3 = self.pool3(output_save_3)  # (1, 250, 64)
+
             attention1 = self.attention1(output_save_1, output_save_1)  # (1, 500, 64)
             attention2 = self.attention2(output_save_2, output_save_2)  # (1, 500, 64)
             attention3 = self.attention3(output_save_3, output_save_3)  # (1, 500, 64)
-
-            attention1 = self.pool1(attention1)  # (1, 250, 64)
-            attention2 = self.pool2(attention2)  # (1, 250, 64)
-            attention3 = self.pool3(attention3)  # (1, 250, 64)
 
             cc1 = self.concat1([attention1, output]) # (1, 250, 128)
             cc2 = self.concat2([attention2, output])  # (1, 250, 128)
             cc3 = self.concat3([attention3, output])  # (1, 250, 128)
 
-            cc1 = self.att1([cc1, cc1])
-            cc2 = self.att2([cc2, cc2])
-            cc3 = self.att3([cc3, cc3])
+            cc1 = self.att1(cc1, cc1)
+            cc2 = self.att2(cc2, cc2)
+            cc3 = self.att3(cc3, cc3)
 
             output = self.concat4([cc1, cc2, cc3]) # (1, 250, 384)
             output = self.reshape(output)
 
-            output = self.dense1(output)
-            output = self.dense2(output)
+            output = self.dense(output)
 
             # output = tf.reshape(output, [2, 10])
             # output = tf.nn.softmax(output)
@@ -322,11 +320,11 @@ def INT():
 
         # Save the weights using the `checkpoint_path` format
         # model.save_weights(checkpoint_path.format(epoch=0))
-        logdir = "logs/fit/" + datetime.now().strftime("%Y%m%d-%H%M%S")
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+        # logdir = "logs/fit/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+        # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
         # model.fit(train_d, validation_data=valid_d, epochs=100, batch_size=1, callbacks=[cp_callback, tensorboard_callback])
         the_scheduler = tf.keras.callbacks.LearningRateScheduler(scheduler)
-        model.fit(train_d, validation_data=valid_d, epochs=100, batch_size=1, callbacks=[cp_callback, the_scheduler, tensorboard_callback])
+        model.fit(train_d, validation_data=valid_d, epochs=100, batch_size=1, callbacks=[cp_callback, the_scheduler])
         print(round(model.optimizer.lr.numpy(), 5))
         # model.save('/home/avshmelev/bash_scripts/rnn')
         print("Learning finished", flush=True)
@@ -387,34 +385,34 @@ def test():
         def __init__(self):
             super(KINT, self).__init__()
 
-            self.initial1 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.initial2 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.initial3 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.initial4 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.initial5 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.initial6 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
+            self.initial1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.initial2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.initial3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.initial4 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.initial5 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.initial6 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv1_1 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv1_2 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv1_3 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
+            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
+            self.conv1_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv1_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv1_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.attention2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv2_1 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv2_2 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv2_3 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
+            self.attention2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
+            self.conv2_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv2_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv2_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.attention3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=20)
-            self.conv3_1 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv3_2 = tf.keras.layers.Conv1D(128, 9, padding='same', activation="relu")
-            self.conv3_3 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
+            self.attention3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
+            self.conv3_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv3_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.conv3_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.last1 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
-            self.last2 = tf.keras.layers.Conv1D(64, 9, padding='same', activation="relu")
+            self.last1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.last2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
 
-            self.att1 = tf.keras.layers.Attention()
-            self.att2 = tf.keras.layers.Attention()
-            self.att3 = tf.keras.layers.Attention()
+            self.att1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
+            self.att2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
+            self.att3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
 
             self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
             self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
@@ -425,7 +423,7 @@ def test():
             self.concat2 = tf.keras.layers.Concatenate()
             self.concat3 = tf.keras.layers.Concatenate()
             self.concat4 = tf.keras.layers.Concatenate()
-            self.reshape = tf.keras.layers.Reshape((96000, ))
+            self.reshape = tf.keras.layers.Reshape((384000, ))
 
             # self.rnn1 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(150))
 
@@ -467,9 +465,9 @@ def test():
             cc2 = self.concat2([attention2, output])  # (1, 250, 128)
             cc3 = self.concat3([attention3, output])  # (1, 250, 128)
 
-            cc1 = self.att1([cc1, cc1])
-            cc2 = self.att2([cc2, cc2])
-            cc3 = self.att3([cc3, cc3])
+            cc1 = self.att1(cc1, cc1)
+            cc2 = self.att2(cc2, cc2)
+            cc3 = self.att3(cc3, cc3)
 
             output = self.concat4([cc1, cc2, cc3]) # (1, 250, 384)
             output = self.reshape(output)
@@ -512,8 +510,8 @@ def test():
 # p1.join()
 # # p2.join()
 
-# INT()
-test()
+INT()
+# test()
 
 # input_shape = (1, 2, 2, 1)
 # x = tf.random.normal(input_shape)

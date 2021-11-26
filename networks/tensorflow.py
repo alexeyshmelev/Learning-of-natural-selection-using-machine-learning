@@ -379,6 +379,12 @@ def test():
         def update_state(self, y_true, y_pred, sample_weight=None):
             y_true = tf.argmax(y_true, 1)
             y_pred = tf.argmax(y_pred, 1)
+            if tf.math.abs(y_true - y_pred) <= tf.constant(1, dtype=tf.int64):
+                y_true = tf.constant(1, dtype=tf.int64)
+                y_pred = tf.constant(1, dtype=tf.int64)
+            else:
+                y_true = tf.constant(1, dtype=tf.int64)
+                y_pred = tf.constant(0, dtype=tf.int64)
             super().update_state(y_true, y_pred, sample_weight)
 
     class KINT(tf.keras.Model):

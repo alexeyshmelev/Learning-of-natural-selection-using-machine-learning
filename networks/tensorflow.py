@@ -502,7 +502,7 @@ def test():
             print(prediction)
             max_predicted = np.argmax(prediction.flatten())
             max_true = np.argmax(target[i])
-            if max_predicted == max_true:
+            if abs(max_predicted - max_true) <= 1:
                 counter += 1
         print(counter)
     # loss, acc = model.evaluate(input, target, verbose=2, batch_size=1)

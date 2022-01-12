@@ -352,94 +352,45 @@ def test():
     class KINT(tf.keras.Model):
         def __init__(self):
             super(KINT, self).__init__()
+            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=100)
+            self.conv1 = tf.keras.layers.Conv1D(64, 100, padding='same', activation="relu")
+            self.conv2 = tf.keras.layers.Conv1D(64, 100, padding='same', activation="relu")
+            self.conv3 = tf.keras.layers.Conv1D(64, 100, padding='same', activation="relu",
+                                                kernel_regularizer=tf.keras.regularizers.l2(l=0.01))
+            self.conv4 = tf.keras.layers.Conv1D(64, 100, padding='same', activation="relu",
+                                                kernel_regularizer=tf.keras.regularizers.l2(l=0.01))
 
-            self.initial1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.initial2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.initial3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.initial4 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.initial5 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.initial6 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.batch1 = tf.keras.layers.BatchNormalization()
+            self.batch2 = tf.keras.layers.BatchNormalization()
+            self.batch3 = tf.keras.layers.BatchNormalization()
+            self.batch4 = tf.keras.layers.BatchNormalization()
 
-            self.attention1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-            self.conv1_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv1_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv1_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
+            self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2)
+            self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2)
+            self.pool3 = tf.keras.layers.MaxPooling1D(pool_size=5)
 
-            self.attention2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-            self.conv2_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv2_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv2_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-
-            self.attention3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-            self.conv3_1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv3_2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.conv3_3 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-
-            self.last1 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-            self.last2 = tf.keras.layers.Conv1D(10, 20, padding='same', activation="relu")
-
-            self.att1 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-            self.att2 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-            self.att3 = tf.keras.layers.MultiHeadAttention(num_heads=20, key_dim=60)
-
-            self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
-            self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
-            self.pool3 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
-            self.pool4 = tf.keras.layers.MaxPooling1D(pool_size=2, strides=2)
-
-            self.concat1 = tf.keras.layers.Concatenate()
-            self.concat2 = tf.keras.layers.Concatenate()
-            self.concat3 = tf.keras.layers.Concatenate()
-            self.concat4 = tf.keras.layers.Concatenate()
-            self.reshape = tf.keras.layers.Reshape((384000, ))
-
-            # self.rnn1 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(150))
-
-            self.dense = tf.keras.layers.Dense(10, activation="softmax")
-
+            self.dense = tf.keras.layers.Dense(10, activation="softmax",
+                                               kernel_regularizer=tf.keras.regularizers.l2(l=0.01))
 
         def call(self, src):
             # here will be outputs of the each layer
+            output = self.batch1(src)
+            output = self.conv1(output)  # (32, 500, 1024)
+            output = self.pool1(output)  # (32, 250, 1024)
 
-            output = self.initial1(src)
-            output = self.initial2(output)
-            output = self.initial3(output)
-            output = self.initial4(output)
-            output = self.initial5(output)
-            output = self.initial6(output)
+            output = self.batch2(output)
+            output = self.conv2(output)  # (32, 250, 1024)
+            output = self.pool2(output)  # (32, 125, 1024)
 
-            output = self.conv1_1(output) # (1, 500, 64)
-            output = self.conv1_2(output) # (1, 500, 64)
-            output_save_1 = self.conv1_3(output)  # (1, 500, 64)
-            output = self.conv2_1(output_save_1)  # (1, 500, 64)
-            output = self.conv2_2(output)  # (1, 500, 64)
-            output_save_2 = self.conv2_3(output)  # (1, 500, 64)
-            output = self.conv3_1(output_save_2)  # (1, 500, 64)
-            output = self.conv3_2(output)  # (1, 500, 64)
-            output_save_3 = self.conv3_3(output)  # (1, 500, 64)
-            output = self.last1(output_save_3)
-            output = self.last2(output)
-            output = self.pool4(output)
+            output = self.batch3(output)
+            output = self.conv3(output)  # (32, 125, 1024)
+            output = self.pool3(output)  # (32, 25, 1024)
 
-            output_save_1 = self.pool1(output_save_1)  # (1, 250, 64)
-            output_save_2 = self.pool2(output_save_2)  # (1, 250, 64)
-            output_save_3 = self.pool3(output_save_3)  # (1, 250, 64)
+            output = self.batch4(output)
+            output = self.conv4(output)  # (32, 25, 1024)
+            output = self.attention1(output, output)
 
-            attention1 = self.attention1(output_save_1, output_save_1)  # (1, 500, 64)
-            attention2 = self.attention2(output_save_2, output_save_2)  # (1, 500, 64)
-            attention3 = self.attention3(output_save_3, output_save_3)  # (1, 500, 64)
-
-            cc1 = self.concat1([attention1, output]) # (1, 250, 128)
-            cc2 = self.concat2([attention2, output])  # (1, 250, 128)
-            cc3 = self.concat3([attention3, output])  # (1, 250, 128)
-
-            cc1 = self.att1(cc1, cc1)
-            cc2 = self.att2(cc2, cc2)
-            cc3 = self.att3(cc3, cc3)
-
-            output = self.concat4([cc1, cc2, cc3]) # (1, 250, 384)
-            output = self.reshape(output)
-
+            output = tf.reshape(output, [1, 1600])
             output = self.dense(output)
 
             # output = tf.reshape(output, [2, 10])
@@ -448,12 +399,19 @@ def test():
 
             return output
 
+        def build_graph(self):
+            self.build((1, 500, 5))
+            inputs = tf.keras.Input(shape=[500, 5])
+            self.call(inputs)
+
     with tf.device('/cpu:0'):
         model = KINT()
-        model.build((None, 500, 5))
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001), loss=tf.keras.losses.MeanSquaredError(), metrics=[TruePositivesM()])
+        model.build_graph()
+        # model.build((32, 500, 5))
+        model(tf.keras.Input(shape=[500, 5]))
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001), loss=tf.keras.losses.KLDivergence(), metrics=[TruePositivesM()])
         model.summary()
-        model.load_weights("weights.11.hdf5")
+        model.load_weights("weights.59.hdf5")
         print("Making testing dataset...", flush=True)
         input, target = DataGen()
         counter = 0
@@ -478,8 +436,8 @@ def test():
 # p1.join()
 # # p2.join()
 
-INT()
-# test()
+# INT()
+test()
 
 # input_shape = (1, 2, 3)
 # x = tf.random.normal(input_shape)

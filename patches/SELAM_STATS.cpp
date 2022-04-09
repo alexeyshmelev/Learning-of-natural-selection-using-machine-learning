@@ -358,7 +358,7 @@ void tract_info::compute_allele_stats(double window_size) {
 // c->first*2+p - это принимат значение 0 или 1
 // tract_iterator - это, видимо, просто номер тракта дляконкретной особи для конкретной предковой популяции в симулируемом участке генома
 
-cout << sample.size() << endl;
+//cout << sample.size() << endl;
 
 
 

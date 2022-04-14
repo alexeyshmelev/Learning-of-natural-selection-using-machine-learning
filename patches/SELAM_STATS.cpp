@@ -373,15 +373,17 @@ void tract_info::compute_allele_stats(double window_size) {
         
         class window_stats_m {
             public:
-            vector<float> r ;
-	        vector<float> l ;
+            vector<float> a0r ;
+	    vector<float> a0l ;
+            vector<float> a1r ;
+            vector<float> a1l ;
         };
         
         map<float,window_stats > stats ;
         map<float,window_stats_m > stats_m ;
         
         for ( int i = 0 ; i < sample.size() ; i ++ ) {
-	cout << "Номер особи: " << i << endl;
+	//cout << "Номер особи: " << i << endl;
             for ( int p = 0 ; p < 2 ; p ++ ) {
                 
                 /// will skip x chromosomes of males
@@ -414,7 +416,7 @@ void tract_info::compute_allele_stats(double window_size) {
                 ////////////////////////////////////////////////////// new code in between
                 
                 tract_iterator = 0 ;
-                for ( double w = window_size / 2 ; w <= c->second + window_size ; w += window_size ) {
+                for ( double w = 0 ; w <= c->second ; w += window_size ) {
                     
                     while ( tract_iterator < sample.at(i).chromosomes.at(c->first*2+p).size() - 1 && w > sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end ) {
                         tract_iterator ++ ;
@@ -424,11 +426,15 @@ void tract_info::compute_allele_stats(double window_size) {
 
                     if ( w >= sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).start && w <= sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end ) {
                         
-			// type не нужен (т.е. не важно, это уасток от предковой популяции a0 или a1)
-			
-			stats_m[w].r.push_back( sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end - w ) ;
-			stats_m[w].l.push_back( w - sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).start ) ;
-			cout << sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end << " " << w << endl;
+			if ( sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).type == 0 ) {
+			stats_m[w].a0r.push_back( sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end - w ) ;
+			stats_m[w].a0l.push_back( w - sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).start ) ;
+			}
+		   else {
+			stats_m[w].a1r.push_back( sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end - w ) ;
+			stats_m[w].a1l.push_back( w - sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).start ) ;
+			}
+			//cout << sample.at(i).chromosomes.at(c->first*2+p).at(tract_iterator).end << " " << w << endl;
 			
                     }
                 }
@@ -450,7 +456,7 @@ void tract_info::compute_allele_stats(double window_size) {
 	int counter = 0;
 	int constraint = stats_m.size();
 	int j = 1;
-	cout << "Количество итерирований, чтобы посчитать сумму трактов (ещё не среднее): " << w_m->second.r.size() << endl;
+	//cout << "Количество итерирований, чтобы посчитать сумму трактов (ещё не среднее): " << w_m->second.r.size() << endl;
         for ( auto w = stats.begin() ; w != stats.end() ; w ++ ) {
             
             float prop0 = w->second.a0.size() ;
@@ -458,8 +464,11 @@ void tract_info::compute_allele_stats(double window_size) {
             
             float mean0 = 0 ;
             float mean1 = 0 ;
-            float r = 0;
-            float l = 0;
+            float a0r = 0;
+            float a0l = 0;
+            float a1r = 0;
+            float a1l = 0;
+
             for ( int i = 0 ; i < w->second.a0.size() ; i ++ ) {
                 mean0 += w->second.a0.at(i) ;
             }
@@ -467,18 +476,29 @@ void tract_info::compute_allele_stats(double window_size) {
                 mean1 += w->second.a1.at(i) ;
             }
 
-            for ( int i = 0 ; i < w_m->second.r.size() ; i ++ ) {
-                r += w_m->second.r.at(i) ;
+            for ( int i = 0 ; i < w_m->second.a0r.size() ; i ++ ) {
+                a0r += w_m->second.a0r.at(i) ;
             }
 
-            for ( int i = 0 ; i < w_m->second.l.size() ; i ++ ) {
-                l += w_m->second.l.at(i) ;
+            for ( int i = 0 ; i < w_m->second.a0l.size() ; i ++ ) {
+                a0l += w_m->second.a0l.at(i) ;
             }
+            for ( int i = 0 ; i < w_m->second.a1r.size() ; i ++ ) {
+                a1r += w_m->second.a1r.at(i) ;
+            }
+
+            for ( int i = 0 ; i < w_m->second.a1l.size() ; i ++ ) {
+                a1l += w_m->second.a1l.at(i) ;
+            }
+
             
             mean0 /= w->second.a0.size() ;
             mean1 /= w->second.a1.size() ;
-            r /= w_m->second.r.size() ;
-            l /= w_m->second.l.size() ;
+            a0r /= w_m->second.a0r.size() ;
+            a0l /= w_m->second.a0l.size() ;
+	    a1r /= w_m->second.a1r.size() ;
+            a1l /= w_m->second.a1l.size() ;
+
             
             float var0 = 0 ;
             float var1 = 0 ;
@@ -494,7 +514,7 @@ void tract_info::compute_allele_stats(double window_size) {
             
             cout << c->first << "\t" << w->first << "\t" ;
             cout << prop0 << "\t" << mean0 << "\t" ;
-            cout << mean1 << "\t" << var0 << "\t" << var1 << "\t" << r << "\t" << l << endl ;
+            cout << mean1 << "\t" << var0 << "\t" << var1 << "\t" << a0r << "\t" << a0l << "\t" << a1r << "\t" << a1l << endl ;
             
             if (j != constraint) w_m ++;
 	    else break;

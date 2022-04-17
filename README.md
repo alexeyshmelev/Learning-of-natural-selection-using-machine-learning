@@ -10,6 +10,8 @@ srun --pty --mincpus=2 --gpus=1 bash
 # Compile SELAM
 
 ```
+module load Python/Anaconda_v10.2019
+module load libs/gsl/2.6
 make -f Makefile
 ```
 

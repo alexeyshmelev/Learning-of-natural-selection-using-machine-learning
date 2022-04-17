@@ -7,6 +7,12 @@ Link for training and testing data downloading: [Google Drive](https://drive.goo
 srun --pty --mincpus=2 --gpus=1 bash
 ```
 
+# Compile SELAM
+
+```
+make -f Makefile
+```
+
 # Problems
 
 * **Overfitting**

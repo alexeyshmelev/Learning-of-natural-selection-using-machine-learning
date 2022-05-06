@@ -226,7 +226,6 @@ Process finished with exit code -1
 
 # Ensemble stats
 
-'
 ```
 C:\Users\Alex\AppData\Local\Programs\Python\Python39\python.exe C:/HSE/EPISTASIS/nn/main.py
 [name: "/device:CPU:0"
@@ -2751,5 +2750,4 @@ Epoch 10: val_true_positives_m did not improve from 0.53931
 Learning finished
 
 Process finished with exit code 0
-
 ```

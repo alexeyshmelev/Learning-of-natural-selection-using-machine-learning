@@ -18,6 +18,7 @@ make -f Makefile
 # Help
 ```
 sacct -o "JobID%30,JobName%30,State,NodeList"
+squeue -w cn-011
 ```
 
 # Problems

@@ -15,6 +15,11 @@ module load libs/gsl/2.6
 make -f Makefile
 ```
 
+# Help
+```
+sacct -o "JobID%30,JobName%30,State,NodeList"
+```
+
 # Problems
 
 * **Overfitting**

@@ -21,6 +21,10 @@ sacct -o "JobID%30,JobName%30,State,NodeList"
 squeue -w cn-011
 ```
 
+# Useful links:
+
+* [Neuroevolution](https://www.inovex.de/de/blog/neuroevolution/)
+
 # Problems
 
 * **Overfitting**

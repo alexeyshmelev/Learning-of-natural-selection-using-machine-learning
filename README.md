@@ -19,6 +19,7 @@ make -f Makefile
 ```
 sacct -o "JobID%30,JobName%30,State,NodeList"
 squeue -w cn-011
+ls -1 | grep -E '[1-9][0]{2,3}_0.03_0.007_5[0-9]{2}' | xargs rm -v
 ```
 
 # Useful links:

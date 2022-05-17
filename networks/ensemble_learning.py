@@ -8,289 +8,309 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 import matplotlib.pyplot as plt
-from multiprocessing import Process, Value
+from multiprocessing import Process, Value, Manager
 from tensorflow.python.client import device_lib
 
-def train(frc_class, net_count, acc):
 
+class KINT(tf.keras.Model):
+    def __init__(self):
+        super(KINT, self).__init__()
+
+        self.conv1 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv2 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv3 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv4 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv5 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv6 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv7 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+        self.conv8 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
+
+        self.batch1 = tf.keras.layers.BatchNormalization()
+        self.batch2 = tf.keras.layers.BatchNormalization()
+        self.batch3 = tf.keras.layers.BatchNormalization()
+        self.batch4 = tf.keras.layers.BatchNormalization()
+        self.batch5 = tf.keras.layers.BatchNormalization()
+        self.batch6 = tf.keras.layers.BatchNormalization()
+        self.batch7 = tf.keras.layers.BatchNormalization()
+        self.batch8 = tf.keras.layers.BatchNormalization()
+
+        self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2)
+        self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2)
+        self.pool3 = tf.keras.layers.MaxPooling1D(pool_size=5)
+
+        self.flat = tf.keras.layers.Flatten()
+        self.dense1 = tf.keras.layers.Dense(256, activation="relu")
+        self.dense2 = tf.keras.layers.Dense(128, activation="relu")
+        self.dense3 = tf.keras.layers.Dense(10, activation="softmax")
+
+    def call(self, src):
+        output = self.conv1(src)
+        output = self.batch1(output)
+
+        output = self.conv2(output)
+        output = self.batch2(output)
+
+        output = self.pool1(output)
+
+        output = self.conv3(output)
+        output = self.batch3(output)
+
+        output = self.conv4(output)
+        output = self.batch4(output)
+
+        output = self.pool2(output)
+
+        output = self.conv5(output)
+        output = self.batch5(output)
+
+        output = self.conv6(output)
+        output = self.batch6(output)
+
+        output = self.pool3(output)
+
+        output = self.conv7(output)
+        output = self.batch7(output)
+
+        output = self.conv8(output)
+        output = self.batch8(output)
+
+        output = self.flat(output)
+        output = self.dense1(output)
+        output = self.dense2(output)
+        output = self.dense3(output)
+
+        return output
+
+    def build_graph(self):
+        self.build((32, 1001, 7))
+        inputs = tf.keras.Input(shape=[1001, 7])
+        self.call(inputs)
+
+def FormTarget(gen, frc):
+
+    ########################################################### common
     gen_int = [(i + 1) * 100 for i in range(10)]
 
     frc_start = 0.001
     frc_end = 0.1
     l = np.log(frc_end) - np.log(frc_start)
     frc_int = [np.exp(l * (i + 1) / 10 + np.log(frc_start)) for i in range(10)]
-    print("FRC_CLASSES", np.trunc(np.array(frc_int)*1000)/1000)
+    print("FRC_CLASSES", np.trunc(np.array(frc_int) * 1000) / 1000)
+    ###########################################################
 
     # adm_start = 0.0002
     # adm_end = 0.01
     # l = np.log(adm_end) - np.log(adm_start)
     # adm_int = [np.exp(l*(i+1)/10 + np.log(adm_start)) for i in range(10)]
 
-    def FormTarget(gen, frc):
+    gen_array = np.full(10, 0)
+    # adm_array = np.full(10, 0)
+    # frc_array = np.full(10, 0)
 
-        gen_array = np.full(10, 0)
-        # adm_array = np.full(10, 0)
-        # frc_array = np.full(10, 0)
+    # adm_num = 0
+    # frc_num = 0
 
-        # adm_num = 0
-        # frc_num = 0
+    for k, elem in enumerate(gen_int):
+        if gen == elem:
+            gen_num = k
 
-        for k, elem in enumerate(gen_int):
-            if gen == elem:
-                gen_num = k
+    # for k, elem in enumerate(adm_int):
+    #   if adm > elem:
+    #     adm_num = k + 1
 
-        # for k, elem in enumerate(adm_int):
-        #   if adm > elem:
-        #     adm_num = k + 1
+    # for k, elem in enumerate(frc_int):
+    #     if frc > elem:
+    #         frc_num = k + 1
 
-        # for k, elem in enumerate(frc_int):
-        #     if frc > elem:
-        #         frc_num = k + 1
+    gen_array[gen_num] = 1
+    array = gen_array
+    # if gen == 100:
+    #     array = np.array([1, 0])
+    #     sample_weights = np.array([10, 0])
+    # else:
+    #     array = np.array([0, 1])
+    #     sample_weights = np.array([0, 1])
+    # adm_array[adm_num] = 1
+    # frc_array[frc_num] = 1
+    # array = np.concatenate([gen_array, frc_array]).tolist()
+    # array = torch.argmax(array).view(1).type(dtype=torch.float).cuda(0)
 
-        gen_array[gen_num] = 1
-        array = gen_array
-        # if gen == 100:
-        #     array = np.array([1, 0])
-        #     sample_weights = np.array([10, 0])
-        # else:
-        #     array = np.array([0, 1])
-        #     sample_weights = np.array([0, 1])
-        # adm_array[adm_num] = 1
-        # frc_array[frc_num] = 1
-        # array = np.concatenate([gen_array, frc_array]).tolist()
-        # array = torch.argmax(array).view(1).type(dtype=torch.float).cuda(0)
+    return array.reshape((1, 10))
 
-        return array.reshape((1, 10))
+def scheduler(epoch, lr):
+    print('LEARNING RATE:', round(lr, 8))
+    if epoch == 0:
+        return lr
+    else:
+        return 0.0001
 
-    def scheduler(epoch, lr):
-        print('LEARNING RATE:', round(lr, 8))
-        if epoch == 0:
-            return lr
-        else:
-            return 0.0001
+def FormData(train_number, path):
 
-    def FormData(train_number, path):
+    temp_data = []
+    inputs = []
+    targets = []
+    sample_weights = []
 
+    file_list = sorted(os.listdir(path))
+
+    for i in range(train_number):
+        if (i % 100) == 0:
+            print("Train file ", i, flush=True)
+        exact_file = path + '/' + file_list[i]
+        file = open(exact_file, 'r')
+        for line_num, line in enumerate(file):
+            array = line.split('\t')
+            temp = [array[2], array[3], array[4], array[5], array[6], array[7], array[8]]
+            temp = [float(i) if i != '-nan' and i != '-nan\n' else float(0) for i in temp]
+            if temp[0] != 0:
+                temp[0] = temp[0] * 10
+            if temp[1] != 0:
+                temp[1] = temp[1] * 1000
+            if temp[2] != 0:
+                temp[2] = temp[2] * 1000
+            if temp[3] != 0:
+                temp[3] = temp[3] * 1000000
+            if temp[4] != 0:
+                temp[4] = temp[4] * 1000000
+            if temp[5] != 0:
+                temp[5] = temp[5] * 1000
+            if temp[6] != 0:
+                temp[6] = temp[6] * 1000
+            temp_data += [temp]
+            if line_num == 1000:
+                break
+        # temp_data.append(float(exact_file.split('_')[4]))
+        temp = np.array(temp_data)
+        # start = temp[:500, :]
+        # end = temp[:499:-1, :]
+        # temp_data = np.add(start, end)
+        # inputs += [temp_data]
+        inputs += [temp]
         temp_data = []
-        inputs = []
-        targets = []
-        sample_weights = []
+        file.close()
 
-        file_list = sorted(os.listdir(path))
+        # one_target, one_sample_weight = FormTarget(float(exact_file.split('_')[3].split('/')[1]), float(exact_file.split('_')[5]))
+        one_target = FormTarget(float(exact_file.split('_')[3].split('/')[1]), float(exact_file.split('_')[5]))
+        targets += [one_target]
+        # sample_weights.append(one_sample_weight)
 
-        for i in range(train_number):
-            if (i % 100) == 0:
-                print("Train file ", i, flush=True)
-            exact_file = path + '/' + file_list[i]
-            file = open(exact_file, 'r')
-            for line_num, line in enumerate(file):
-                array = line.split('\t')
-                temp = [array[2], array[3], array[4], array[5], array[6], array[7], array[8]]
-                temp = [float(i) if i != '-nan' and i != '-nan\n' else float(0) for i in temp]
-                if temp[0] != 0:
-                    temp[0] = temp[0] * 10
-                if temp[1] != 0:
-                    temp[1] = temp[1] * 1000
-                if temp[2] != 0:
-                    temp[2] = temp[2] * 1000
-                if temp[3] != 0:
-                    temp[3] = temp[3] * 1000000
-                if temp[4] != 0:
-                    temp[4] = temp[4] * 1000000
-                if temp[5] != 0:
-                    temp[5] = temp[5] * 1000
-                if temp[6] != 0:
-                    temp[6] = temp[6] * 1000
-                temp_data += [temp]
-                if line_num == 1000:
-                    break
-            # temp_data.append(float(exact_file.split('_')[4]))
-            temp = np.array(temp_data)
-            # start = temp[:500, :]
-            # end = temp[:499:-1, :]
-            # temp_data = np.add(start, end)
-            # inputs += [temp_data]
-            inputs += [temp]
-            temp_data = []
-            file.close()
+    return np.array(inputs), np.array(targets) #, np.array(sample_weights).reshape((train_number, 1, 2))
 
-            # one_target, one_sample_weight = FormTarget(float(exact_file.split('_')[3].split('/')[1]), float(exact_file.split('_')[5]))
-            one_target = FormTarget(float(exact_file.split('_')[3].split('/')[1]), float(exact_file.split('_')[5]))
-            targets += [one_target]
-            # sample_weights.append(one_sample_weight)
 
-        return np.array(inputs), np.array(targets) #, np.array(sample_weights).reshape((train_number, 1, 2))
+class TruePositivesM(tf.keras.metrics.Accuracy):
+    def __init__(self,
+                 thresholds=None,
+                 name=None,
+                 dtype=None):
+        super(TruePositivesM, self).__init__(name=name, dtype=dtype)
 
-    class DataGen(tf.keras.utils.Sequence):
-        def __init__(self, num, path, type, batch_size, from_file=False):
-            self.batch_size = batch_size
-            self.length = None
-            if type == "train":
-                fixed_path = r"C:\HSE\EPISTASIS\nn\next_gen_simulation_max"
-            if type == "test":
-                fixed_path = r"C:\HSE\EPISTASIS\nn\next_gen_simulation_maxtest"
-            file_list = sorted(os.listdir(fixed_path))
-            file_list = list(map(lambda file_name: float(file_name.split("_")[2]), file_list))
-            if frc_class == 0:
-                selection = file_list <= frc_int[frc_class]
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # tf.print(y_pred.shape)
+
+        for i in range(32): ################################################################################################### change as batch size #############################
+            # tf.print(i)
+            # tf.print(y_pred[i:i+1])
+            # tf.print(y_true[i:i + 1])
+            t = tf.argmax(y_true[i:i+1], 1)
+            p = tf.argmax(y_pred[i:i+1], 1)
+            if tf.math.abs(t - p) <= tf.constant(1, dtype=tf.int64):
+                t = tf.constant(1, dtype=tf.int64)
+                p = tf.constant(1, dtype=tf.int64)
             else:
-                selection = np.array(list(map(lambda frc: frc_int[frc_class - 1] < frc <= frc_int[frc_class], file_list)))
-            if from_file:
-                with open(path + 'all_inputs_{}.npy'.format(type), 'rb') as f:
-                    self.all_inputs = np.load(f)
-                    self.all_inputs = self.all_inputs[selection, :, :]
-                    self.length = math.floor(len(self.all_inputs) / self.batch_size)
-                    # print((self.all_inputs[:, :, 0].squeeze() == 0.))
-                    # self.copy = np.all(self.all_inputs[:, 500, 0].squeeze() != 0.)
-                    # self.all_inputs = self.all_inputs[self.copy, :, :]
-                with open(path + 'all_targets_{}.npy'.format(type), 'rb') as f:
-                    self.all_targets = np.load(f)
-                    self.all_targets = self.all_targets[selection, :, :]
-                    # self.all_targets = self.all_targets[self.copy, :, :]
-                # with open('all_sample_weights_{}.npy'.format(type), 'rb') as f:
-                #     self.all_sample_weights = np.load(f)
-            else:
-                # self.all_inputs, self.all_targets, self.all_sample_weights = FormData(num, path)
-                self.all_inputs, self.all_targets = FormData(num, path)
-                with open('all_inputs_{}.npy'.format(type), 'wb') as f:
-                    np.save(f, self.all_inputs)
-                with open('all_targets_{}.npy'.format(type), 'wb') as f:
-                    np.save(f, self.all_targets)
-                # with open('all_sample_weights_{}.npy'.format(type), 'wb') as f:
-                #     np.save(f, self.all_sample_weights)
-            print(self.all_inputs.shape, self.all_targets.shape)
-            self.on_epoch_end()
+                t = tf.constant(1, dtype=tf.int64)
+                p = tf.constant(0, dtype=tf.int64)
+            super().update_state(t, p, sample_weight)
 
-        def __getitem__(self, index):
-            input = self.all_inputs[index * self.batch_size:(index + 1) * self.batch_size]
-            target = self.all_targets[index * self.batch_size:(index + 1) * self.batch_size]
-            input = input.reshape((len(input), 1001, 7))
-            # input = input - np.concatenate((input, input[:, -1:].reshape((self.batch_size, 1, 5))), axis=1)[:, 1:, :] ######################## возможно, это стоит убрать для FaceNet
-            target = target.reshape((len(target), 10))
-            # target = np.argmax(target, axis=-1).squeeze()
-            # target = target.astype('float64')
-            # for s in target:
-            #     if np.argmax(s) != 0:
-            #         s[np.argmax(s)-1:np.argmax(s)+2:2] = 0.99
-            #     else:
-            #         s[np.argmax(s):np.argmax(s)+2] = 0.99
-            #     s[np.argmax(s)] = 1
-            # tf.print(target)
-            # target = np.array([0 if i != 1+3*np.argmax(target) else 1 for i in range(30)]).reshape(1, 30)
-            # sample_weights = self.all_sample_weights[index].reshape(2)
-            # print(target)
+class DataGen(tf.keras.utils.Sequence):
+    def __init__(self, num, path, type, batch_size, frc_class, from_file=False):
 
-            return input, target
+        ########################################################### common
+        gen_int = [(i + 1) * 100 for i in range(10)]
 
-        def on_epoch_end(self):
-            randomize = np.arange(len(self.all_inputs))
-            np.random.shuffle(randomize)
-            self.all_inputs = self.all_inputs[randomize]
-            self.all_targets = self.all_targets[randomize]
-            # self.all_sample_weights = self.all_sample_weights[randomize]
+        frc_start = 0.001
+        frc_end = 0.1
+        l = np.log(frc_end) - np.log(frc_start)
+        frc_int = [np.exp(l * (i + 1) / 10 + np.log(frc_start)) for i in range(10)]
+        print("FRC_CLASSES", np.trunc(np.array(frc_int) * 1000) / 1000)
+        ###########################################################
 
-        def __len__(self):
-            return math.floor(len(self.all_inputs) / self.batch_size)
+        # adm_start = 0.0002
+        # adm_end = 0.01
+        # l = np.log(adm_end) - np.log(adm_start)
+        # adm_int = [np.exp(l*(i+1)/10 + np.log(adm_start)) for i in range(10)]
 
-    class TruePositivesM(tf.keras.metrics.Accuracy):
-        def __init__(self,
-                     thresholds=None,
-                     name=None,
-                     dtype=None):
-            super(TruePositivesM, self).__init__(name=name, dtype=dtype)
+        self.batch_size = batch_size
+        self.length = None
+        if type == "train":
+            fixed_path = r"C:\HSE\EPISTASIS\nn\next_gen_simulation_max"
+        if type == "test":
+            fixed_path = r"C:\HSE\EPISTASIS\nn\next_gen_simulation_maxtest"
+        file_list = sorted(os.listdir(fixed_path))
+        file_list = list(map(lambda file_name: float(file_name.split("_")[2]), file_list))
+        if frc_class == 0:
+            selection = file_list <= frc_int[frc_class]
+        else:
+            selection = np.array(list(map(lambda frc: frc_int[frc_class - 1] < frc <= frc_int[frc_class], file_list)))
+        if from_file:
+            with open(path + 'all_inputs_{}.npy'.format(type), 'rb') as f:
+                self.all_inputs = np.load(f)
+                self.all_inputs = self.all_inputs[selection, :, :]
+                self.all_inputs = self.all_inputs[::2, :, :]
+                self.length = math.floor(len(self.all_inputs) / self.batch_size)
+                # print((self.all_inputs[:, :, 0].squeeze() == 0.))
+                # self.copy = np.all(self.all_inputs[:, 500, 0].squeeze() != 0.)
+                # self.all_inputs = self.all_inputs[self.copy, :, :]
+            with open(path + 'all_targets_{}.npy'.format(type), 'rb') as f:
+                self.all_targets = np.load(f)
+                self.all_targets = self.all_targets[selection, :, :]
+                # self.all_targets = self.all_targets[self.copy, :, :]
+            # with open('all_sample_weights_{}.npy'.format(type), 'rb') as f:
+            #     self.all_sample_weights = np.load(f)
+        else:
+            # self.all_inputs, self.all_targets, self.all_sample_weights = FormData(num, path)
+            self.all_inputs, self.all_targets = FormData(num, path)
+            with open('all_inputs_{}.npy'.format(type), 'wb') as f:
+                np.save(f, self.all_inputs)
+            with open('all_targets_{}.npy'.format(type), 'wb') as f:
+                np.save(f, self.all_targets)
+            # with open('all_sample_weights_{}.npy'.format(type), 'wb') as f:
+            #     np.save(f, self.all_sample_weights)
+        print(self.all_inputs.shape, self.all_targets.shape)
+        self.on_epoch_end()
 
-        def update_state(self, y_true, y_pred, sample_weight=None):
-            # tf.print(y_pred.shape)
+    def __getitem__(self, index):
+        input = self.all_inputs[index * self.batch_size:(index + 1) * self.batch_size]
+        target = self.all_targets[index * self.batch_size:(index + 1) * self.batch_size]
+        input = input.reshape((len(input), 1001, 7))
+        # input = input - np.concatenate((input, input[:, -1:].reshape((self.batch_size, 1, 5))), axis=1)[:, 1:, :] ######################## возможно, это стоит убрать для FaceNet
+        target = target.reshape((len(target), 10))
+        # target = np.argmax(target, axis=-1).squeeze()
+        # target = target.astype('float64')
+        # for s in target:
+        #     if np.argmax(s) != 0:
+        #         s[np.argmax(s)-1:np.argmax(s)+2:2] = 0.99
+        #     else:
+        #         s[np.argmax(s):np.argmax(s)+2] = 0.99
+        #     s[np.argmax(s)] = 1
+        # tf.print(target)
+        # target = np.array([0 if i != 1+3*np.argmax(target) else 1 for i in range(30)]).reshape(1, 30)
+        # sample_weights = self.all_sample_weights[index].reshape(2)
+        # print(target)
 
-            for i in range(32): ################################################################################################### change as batch size #############################
-                # tf.print(i)
-                # tf.print(y_pred[i:i+1])
-                # tf.print(y_true[i:i + 1])
-                t = tf.argmax(y_true[i:i+1], 1)
-                p = tf.argmax(y_pred[i:i+1], 1)
-                if tf.math.abs(t - p) <= tf.constant(1, dtype=tf.int64):
-                    t = tf.constant(1, dtype=tf.int64)
-                    p = tf.constant(1, dtype=tf.int64)
-                else:
-                    t = tf.constant(1, dtype=tf.int64)
-                    p = tf.constant(0, dtype=tf.int64)
-                super().update_state(t, p, sample_weight)
+        return input, target
+
+    def on_epoch_end(self):
+        randomize = np.arange(len(self.all_inputs))
+        np.random.shuffle(randomize)
+        self.all_inputs = self.all_inputs[randomize]
+        self.all_targets = self.all_targets[randomize]
+        # self.all_sample_weights = self.all_sample_weights[randomize]
+
+    def __len__(self):
+        return math.floor(len(self.all_inputs) / self.batch_size)
 
 
-    class KINT(tf.keras.Model):
-        def __init__(self):
-            super(KINT, self).__init__()
-
-            self.conv1 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv2 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv3 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv4 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv5 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv6 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv7 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-            self.conv8 = tf.keras.layers.Conv1D(16, 9, padding='same', activation="relu")
-
-            self.batch1 = tf.keras.layers.BatchNormalization()
-            self.batch2 = tf.keras.layers.BatchNormalization()
-            self.batch3 = tf.keras.layers.BatchNormalization()
-            self.batch4 = tf.keras.layers.BatchNormalization()
-            self.batch5 = tf.keras.layers.BatchNormalization()
-            self.batch6 = tf.keras.layers.BatchNormalization()
-            self.batch7 = tf.keras.layers.BatchNormalization()
-            self.batch8 = tf.keras.layers.BatchNormalization()
-
-            self.pool1 = tf.keras.layers.MaxPooling1D(pool_size=2)
-            self.pool2 = tf.keras.layers.MaxPooling1D(pool_size=2)
-            self.pool3 = tf.keras.layers.MaxPooling1D(pool_size=5)
-
-            self.flat = tf.keras.layers.Flatten()
-            self.dense1 = tf.keras.layers.Dense(256, activation="relu")
-            self.dense2 = tf.keras.layers.Dense(128, activation="relu")
-            self.dense3 = tf.keras.layers.Dense(10, activation="softmax")
-
-        def call(self, src):
-
-            output = self.conv1(src)
-            output = self.batch1(output)
-
-            output = self.conv2(output)
-            output = self.batch2(output)
-
-            output = self.pool1(output)
-
-            output = self.conv3(output)
-            output = self.batch3(output)
-
-            output = self.conv4(output)
-            output = self.batch4(output)
-
-            output = self.pool2(output)
-
-            output = self.conv5(output)
-            output = self.batch5(output)
-
-            output = self.conv6(output)
-            output = self.batch6(output)
-
-            output = self.pool3(output)
-
-            output = self.conv7(output)
-            output = self.batch7(output)
-
-            output = self.conv8(output)
-            output = self.batch8(output)
-
-            output = self.flat(output)
-            output = self.dense1(output)
-            output = self.dense2(output)
-            output = self.dense3(output)
-
-            return output
-
-        def build_graph(self):
-            self.build((32, 1001, 7))
-            inputs = tf.keras.Input(shape=[1001, 7])
-            self.call(inputs)
+def train(frc_class, net_count, acc):
 
     model = KINT()
     model.build_graph()
@@ -302,9 +322,9 @@ def train(frc_class, net_count, acc):
     model.summary()
 
     print("Making training dataset...", flush=True)
-    train_d = DataGen(96926, r'C:\HSE\EPISTASIS\nn\\', 'train', 32, True)
+    train_d = DataGen(96926, r'C:\HSE\EPISTASIS\nn\\', 'train', 32, frc_class, True)
     print("Making testing dataset...", flush=True)
-    valid_d = DataGen(9693, r'C:\HSE\EPISTASIS\nn\\', 'test', 32, True)
+    valid_d = DataGen(9693, r'C:\HSE\EPISTASIS\nn\\', 'test', 32, frc_class, True)
 
     print("Training...", flush=True)
 
@@ -334,7 +354,17 @@ def train(frc_class, net_count, acc):
     print("Learning finished", flush=True)
 
 
+def test(l, path, model_weights, all_inputs):
+    length = len(all_inputs)
+    model = KINT()
+    model.build_graph()
+    model.load_weights(path + model_weights)
+    l[:] = model.predict(all_inputs).flatten().tolist()
+
+
 if __name__ == "__main__":
+
+    t = True
 
     # tensorflow stats
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -342,47 +372,70 @@ if __name__ == "__main__":
     print(device_lib.list_local_devices())  # list of DeviceAttributes
     print(tf.version.VERSION)
 
-    plt.clf()
+    if t:
+        plt.clf()
+        for frc_class in range(10):
+            accuracies = []
+            acc = Value('d', 0.0)
+            for net_count in range(2):
+                print(f" Class: {frc_class+1}, Net Number: {net_count+1} ".center(100, "~"))
+                p = Process(target=train, args=(frc_class, net_count, acc))
+                p.start()
+                p.join()
+                accuracies.append(acc.value)
+            plt.scatter(list(range(1, 3)), accuracies, label=f"Force class {frc_class}", alpha=0.3, s=6, edgecolors='none')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig("ensemble_stats.png")
+    else:
+        path = r"C:\home\avshmelev\bash_scripts\rnn\\"
+        file_list = sorted(os.listdir(path))
+        predictions = []
+        with open('all_inputs_test.npy', 'rb') as f:
+            all_inputs = np.load(f)
+        with open('all_targets_test.npy', 'rb') as f:
+            all_targets = np.load(f)
+        for iter, model_weights in enumerate(file_list):
+            with Manager() as manager:
+                l = manager.list(range(10*len(all_inputs)))
+                p = Process(target=test, args=(l, path, model_weights, all_inputs))
+                p.start()
+                p.join()
+                predictions.append(np.array(l).reshape(len(all_inputs), 10))
+                print(np.array(predictions)[iter][0])
 
-    for frc_class in range(10):
-        accuracies = []
-        acc = Value('d', 0.0)
-        for net_count in range(2):
-            print(f" Class: {frc_class+1}, Net Number: {net_count+1} ".center(100, "~"))
-            p = Process(target=train, args=(frc_class, net_count, acc))
-            p.start()
-            p.join()
-            accuracies.append(acc.value)
-        plt.scatter(list(range(1, 3)), accuracies, label=f"Force class {frc_class}", alpha=0.3, s=6, edgecolors='none')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig("ensemble_stats.png")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        with open('all_predictions.npy', 'wb') as f:
+            np.save(f, np.array(predictions))
 
 
 
 
-def test():
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test_old():
     def DataGen():
         with open('all_inputs_test.npy', 'rb') as f:
             all_inputs = np.load(f)

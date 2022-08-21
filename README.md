@@ -26,6 +26,7 @@ ls -1 | grep -E '[1-9][0]{2,3}_0.03_0.007_5[0-9]{2}' | xargs rm -v
 
 * [Neuroevolution](https://www.inovex.de/de/blog/neuroevolution/)
 * [Benchmarks.ai](https://benchmarks.ai/)
+* [Natural selection](https://content.csbs.utah.edu/~rogers/tch/ant5221/lecture/selection.pdf)
 
 # Problems
 

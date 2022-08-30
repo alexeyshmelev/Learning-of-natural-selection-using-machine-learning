@@ -20,28 +20,23 @@ from nni.retiarii.evaluator.pytorch.lightning import LightningModule
 class ModelSpace(LightningModule):
     def __init__(self):
         super().__init__()
-
         self.loss_fn = nn.CrossEntropyLoss()
 
-        self.input_switch = nn.InputChoice(n_candidates=2)
+        filter_size = nn.ValueChoice([3, 5, 7])
+        num_channels = nn.ValueChoice([64, 128, 256])
 
-        self.conv1 = nn.Conv1d(501, 25, 3)
-        # self.conv2 = nn.LayerChoice([
-        #     nn.Conv2d(32, 64, 3, 1),
-        # ])
-        self.dropout1 = nn.Dropout(0.5)
-        self.dropout2 = nn.Dropout(0.9)
-        self.dropout3 = nn.Dropout(0.5)
-        feature = nn.ValueChoice([64, 128, 256])
-        self.fc1 = nn.Linear(175, feature)
-        self.fc2 = nn.Linear(feature, 10)
+        self.conv1 = nn.LayerChoice([
+            nn.Conv1d(501, num_channels, filter_size),
+            nn.Conv1d(501, num_channels, filter_size),
+            nn.Conv1d(501, num_channels, filter_size)
+        ])
+
+        self.batch1 = nn.BatchNorm1d(num_channels)
+
+        self.dense
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        # x = F.max_pool2d(self.conv2(x), 2)
-        selected = self.input_switch([self.dropout1(x), self.dropout2(x)])
-        x = torch.flatten(selected, 1)
-        x = self.fc2(self.dropout3(F.relu(self.fc1(x))))
+
         output = F.log_softmax(x, dim=1)
         return output
 
@@ -119,3 +114,5 @@ torch.onnx.export(model, (dummy_input, ), 'model_troch_export.onnx', training=to
                       verbose=True,
                       export_params=True)
 lightning.evaluate(model)
+
+print(model)

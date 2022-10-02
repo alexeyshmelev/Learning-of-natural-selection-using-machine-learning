@@ -27,6 +27,7 @@ ls -1 | grep -E '[1-9][0]{2,3}_0.03_0.007_5[0-9]{2}' | xargs rm -v
 * [Neuroevolution](https://www.inovex.de/de/blog/neuroevolution/)
 * [Benchmarks.ai](https://benchmarks.ai/)
 * [Natural selection](https://content.csbs.utah.edu/~rogers/tch/ant5221/lecture/selection.pdf)
+* [Алгоритм Гаусса-Ньютона](https://ru.wikipedia.org/wiki/%D0%90%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC_%D0%93%D0%B0%D1%83%D1%81%D1%81%D0%B0_%E2%80%94_%D0%9D%D1%8C%D1%8E%D1%82%D0%BE%D0%BD%D0%B0)
 
 # Problems
 

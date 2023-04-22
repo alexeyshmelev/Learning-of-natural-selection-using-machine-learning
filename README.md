@@ -7,6 +7,12 @@ Link for training and testing data downloading: [Google Drive](https://drive.goo
 srun --pty --mincpus=2 --gpus=1 bash
 ```
 
+# Cancel all jobs
+
+```
+mj | awk '{print $1}' | xargs -n 1 scancel
+```
+
 # Compile SELAM
 
 ```
